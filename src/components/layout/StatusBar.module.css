@@ -1,0 +1,107 @@
+/* ═══════════════════════════════════════════════════════════
+   STATUSBAR — Clinical SaaS Telemetry & Safety Banner
+   ═══════════════════════════════════════════════════════════ */
+
+.statusbar {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: var(--sidebar-width);
+  height: var(--statusbar-height);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-4);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: left var(--duration-slow) var(--ease-out);
+  user-select: none;
+}
+
+.sidebarCollapsed {
+  left: var(--sidebar-collapsed);
+}
+
+.left,
+.center,
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.statusIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: var(--weight-medium);
+  color: var(--ok);
+}
+
+.okIcon {
+  color: var(--ok);
+}
+
+.telemetryText {
+  color: var(--text-muted);
+}
+
+.divider {
+  opacity: 0.4;
+}
+
+.center {
+  color: var(--text-muted);
+  gap: 6px;
+}
+
+.warningIcon {
+  color: var(--watch);
+  flex-shrink: 0;
+}
+
+.disclaimerText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 600px;
+}
+
+.kbdHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.versionTag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+@media (max-width: 1024px) {
+  .disclaimerText {
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .statusbar {
+    left: 0;
+  }
+
+  .kbdHint,
+  .divider {
+    display: none;
+  }
+}

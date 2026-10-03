@@ -1,0 +1,227 @@
+/* ═══════════════════════════════════════════════════════════════════
+   DENTAL AI — DESIGN TOKENS
+   Clinical, calm, precise. DENTEX blue primary, neutral surfaces,
+   severity colors that stand out against quiet backgrounds.
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Light Theme (default) ─────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-2: #F8FAFC;
+  --border: #E5E7EB;
+  --border-hover: #CBD5E1;
+
+  /* Text */
+  --text: #0F172A;
+  --text-muted: #64748B;
+  --text-inverse: #F7F9FB;
+
+  /* DENTEX blue */
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --primary-soft: #EFF6FF;
+
+  /* Accent — Blue (focus ring, links, selection) */
+  --accent: #2563EB;
+  --accent-soft: #EFF6FF;
+
+  /* Severity / Status (never color-only — always paired with icon + label) */
+  --ok: #1F9D6B;
+  --ok-soft: #E6F7EF;
+  --watch: #D99A0B;
+  --watch-soft: #FFF8E1;
+  --warn: #E2661F;
+  --warn-soft: #FFF0E8;
+  --critical: #D6334A;
+  --critical-soft: #FDEDF0;
+
+  /* Viewer — always dark regardless of theme */
+  --viewer-bg: #0B1118;
+  --viewer-panel: #121B25;
+  --viewer-border: #1E2D3D;
+  --viewer-text: #C8D6E0;
+  --viewer-text-muted: #6B8299;
+
+  /* Shadows — subtle, no glow */
+  --shadow-xs: 0 1px 2px rgba(15, 27, 42, 0.05);
+  --shadow-sm: 0 1px 3px rgba(15, 27, 42, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 27, 42, 0.08);
+  --shadow-lg: 0 8px 24px rgba(15, 27, 42, 0.1);
+  --shadow-overlay: 0 16px 48px rgba(15, 27, 42, 0.16);
+
+  /* Focus ring */
+  --ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* Spacing (8px grid, 4px micro) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Transitions — ease-out, 120-200ms, respect prefers-reduced-motion */
+  --duration-fast: 120ms;
+  --duration-base: 160ms;
+  --duration-slow: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 64px;
+  --topbar-height: 48px;
+  --statusbar-height: 28px;
+  --inspector-width: 360px;
+  --toolrail-width: 48px;
+  --max-width: 1280px;
+
+  /* Z-index scale */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  /* ── Legacy compat (old variable names still used in some pages) ── */
+  --bg-primary: var(--bg);
+  --bg-secondary: var(--surface-2);
+  --bg-card: var(--surface);
+  --bg-card-hover: var(--surface-2);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-muted);
+  --border-color: var(--border);
+  --nav-height: var(--topbar-height);
+  --section-padding: 80px;
+
+  /* Legacy color compat — map old purple tokens to new teal */
+  --primary-light: var(--primary);
+  --primary-dark: var(--primary-hover);
+  --accent-light: var(--accent);
+  --accent-dark: var(--accent);
+  --warning: var(--watch);
+  --danger: var(--critical);
+  --success: var(--ok);
+
+  /* Legacy glass/gradient compat — flatten */
+  --bg-glass: var(--surface);
+  --bg-glass-hover: var(--surface-2);
+  --bg-overlay: rgba(15, 27, 42, 0.5);
+  --border-glass: var(--border);
+  --border-hover: var(--border-hover);
+  --gradient-primary: var(--primary);
+  --gradient-hero: #F8FAFC;
+  --gradient-card: none;
+  --gradient-shimmer: none;
+
+  /* Legacy shadow compat */
+  --shadow-glow: none;
+  --shadow-glow-accent: none;
+
+  /* Legacy radius compat */
+  --radius-full-legacy: var(--radius-full);
+
+  /* Legacy transition compat */
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-base: var(--duration-base) var(--ease-out);
+  --transition-slow: var(--duration-slow) var(--ease-out);
+  --transition-spring: var(--duration-slow) var(--ease-out);
+}
+
+/* ── Dark Theme ────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg: #0D141C;
+  --surface: #131C26;
+  --surface-2: #1A2531;
+  --border: #263443;
+  --border-hover: #344556;
+
+  --text: #E7EDF3;
+  --text-muted: #8FA1B3;
+  --text-inverse: #0D141C;
+
+  --primary: #2BB3BE;
+  --primary-hover: #4CC6D0;
+  --primary-soft: #12303A;
+
+  --accent: #6B8AFF;
+  --accent-soft: #1A2540;
+
+  --ok: #34D399;
+  --ok-soft: #0D2E22;
+  --watch: #FBBF24;
+  --watch-soft: #2D2006;
+  --warn: #FB923C;
+  --warn-soft: #2D1A08;
+  --critical: #FB7185;
+  --critical-soft: #2D0D14;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.45);
+
+  /* Legacy compat overrides for dark */
+  --bg-primary: var(--bg);
+  --bg-secondary: var(--surface-2);
+  --bg-card: var(--surface);
+  --bg-card-hover: var(--surface-2);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-muted);
+  --border-color: var(--border);
+  --bg-glass: var(--surface);
+  --bg-glass-hover: var(--surface-2);
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+  --border-glass: var(--border);
+}
+
+/* ── Reduced motion ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+    --transition-slow: 0ms;
+    --transition-spring: 0ms;
+  }
+}

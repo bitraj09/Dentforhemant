@@ -1,0 +1,84 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  position: absolute;
+  left: var(--space-3);
+  display: flex;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  font-family: var(--font-sans);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+
+/* ── Sizes ── */
+.sm .input {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.md .input {
+  padding: 6px var(--space-3);
+  font-size: var(--text-base);
+}
+
+.hasIcon .input {
+  padding-left: 36px;
+}
+
+.hasIcon.sm .input {
+  padding-left: 30px;
+}
+
+/* ── States ── */
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.hasError .input {
+  border-color: var(--critical);
+}
+
+.hasError .input:focus {
+  box-shadow: 0 0 0 3px var(--critical-soft);
+}
+
+/* ── Helper / Error text ── */
+.helper {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.errorText {
+  color: var(--critical);
+}

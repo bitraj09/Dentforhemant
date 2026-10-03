@@ -1,0 +1,64 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.icon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* ── Sizes ── */
+.sm {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.md {
+  padding: 3px 10px;
+  font-size: var(--text-xs);
+}
+
+/* ── Variants ── */
+.neutral {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.primary {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: transparent;
+}
+
+.ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: transparent;
+}
+
+.watch {
+  background: var(--watch-soft);
+  color: var(--watch);
+  border-color: transparent;
+}
+
+.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: transparent;
+}
+
+.critical {
+  background: var(--critical-soft);
+  color: var(--critical);
+  border-color: transparent;
+}

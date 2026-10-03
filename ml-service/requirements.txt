@@ -1,0 +1,16 @@
+numpy<2
+opencv-python
+torch
+torchvision
+ultralytics
+dill
+fastapi
+uvicorn[standard]
+python-multipart
+scikit-image
+pandas
+huggingface-hub
+transformers
+accelerate
+matplotlib
+timm

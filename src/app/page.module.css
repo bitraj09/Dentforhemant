@@ -1,0 +1,58 @@
+.page { background: #fff; color: #0F172A; }
+.hero { padding: clamp(38px, 6vw, 78px) 28px clamp(48px, 7vw, 88px); background: linear-gradient(180deg, #F8FAFC 0%, #fff 100%); }
+.heroInner { display: grid; grid-template-columns: minmax(0, .9fr) minmax(420px, 1.1fr); align-items: center; gap: clamp(36px, 5vw, 72px); max-width: 1240px; margin: 0 auto; }
+.heroCopy { max-width: 540px; }
+.kicker { display: inline-flex; align-items: center; gap: 8px; color: #475569; font-size: 12px; font-weight: 550; }
+.kickerMark { width: 7px; height: 7px; border-radius: 50%; background: #2563EB; }
+.heroCopy h1 { max-width: 570px; margin: 20px 0 16px; font-size: clamp(38px, 4.6vw, 58px); line-height: 1.06; letter-spacing: -.045em; font-weight: 650; }
+.heroCopy h1 span { color: #2563EB; }
+.heroCopy > p { max-width: 520px; margin: 0; color: #64748B; font-size: 16px; line-height: 1.7; }
+.heroActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+.primaryButton, .secondaryButton { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; padding: 0 15px; border: 1px solid transparent; border-radius: 6px; font-size: 13px; font-weight: 550; transition: background 120ms ease, border-color 120ms ease; }
+.primaryButton { background: #2563EB; color: #fff; }
+.primaryButton:hover { background: #1D4ED8; color: #fff; }
+.secondaryButton { border-color: #D1D5DB; background: #fff; color: #0F172A; }
+.secondaryButton:hover { background: #F8FAFC; border-color: #CBD5E1; }
+.trustLine { display: flex; align-items: center; gap: 7px; margin-top: 22px; color: #64748B; font-size: 11px; }
+.trustLine svg { color: #2563EB; }
+.viewer { min-width: 0; overflow: hidden; border: 1px solid #DCE3EA; border-radius: 9px; background: #fff; box-shadow: 0 16px 42px rgba(15, 23, 42, .08); }
+.viewerHeader, .viewerFooter { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; color: #64748B; font-size: 10px; }
+.viewerHeader { border-bottom: 1px solid #E5E7EB; color: #334155; font-size: 11px; font-weight: 550; }
+.viewerHeader > span:first-child, .viewerFooter > span:first-child { display: inline-flex; align-items: center; gap: 7px; }
+.viewerDot { width: 7px; height: 7px; border-radius: 50%; background: #16A34A; }
+.xrayFrame { position: relative; aspect-ratio: 1.58; overflow: hidden; background: #101820; }
+.xrayImage { object-fit: contain; opacity: .9; }
+.annotation { position: absolute; display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.24); border-radius: 4px; background: rgba(15,23,42,.78); color: #F8FAFC; font-size: 9px; letter-spacing: .01em; }
+.annotation i { width: 6px; height: 6px; border-radius: 50%; background: #60A5FA; }
+.annotationOne { top: 17%; left: 18%; }
+.annotationTwo { top: 31%; right: 13%; }
+.annotationThree { bottom: 22%; left: 47%; }
+.imageCaption { position: absolute; bottom: 9px; left: 10px; color: rgba(255,255,255,.72); font-size: 8px; }
+.viewerFooter { border-top: 1px solid #E5E7EB; }
+.legendDot { width: 7px; height: 7px; border-radius: 50%; background: #60A5FA; }
+.capabilitySection { padding: 20px 28px; border-top: 1px solid #F1F5F9; border-bottom: 1px solid #E5E7EB; }
+.capabilityGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 1240px; margin: 0 auto; }
+.capability { display: flex; align-items: flex-start; gap: 11px; padding: 9px 7px; }
+.capabilityIcon { display: grid; flex: 0 0 auto; width: 32px; height: 32px; place-items: center; border: 1px solid #DBEAFE; border-radius: 6px; background: #EFF6FF; color: #2563EB; }
+.capability h2 { margin: 1px 0 4px; font-size: 12px; letter-spacing: 0; }
+.capability p { margin: 0; color: #64748B; font-size: 10px; line-height: 1.5; }
+.platformSection { max-width: 1240px; margin: 0 auto; padding: clamp(52px, 7vw, 82px) 28px; }
+.sectionIntro { max-width: 610px; margin-bottom: 26px; }
+.sectionEyebrow { color: #2563EB; font-size: 10px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
+.sectionIntro h2, .whyIntro h2 { margin: 9px 0 8px; font-size: clamp(25px, 3vw, 34px); }
+.sectionIntro > p { max-width: 520px; margin: 0; color: #64748B; font-size: 13px; line-height: 1.65; }
+.destinationGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+.destination { min-height: 194px; padding: 20px; border: 1px solid #E5E7EB; border-radius: 8px; background: #fff; }
+.destinationIcon { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid #DBEAFE; border-radius: 6px; background: #EFF6FF; color: #2563EB; }
+.destination h3 { margin: 15px 0 7px; font-size: 15px; }
+.destination p { min-height: 54px; margin: 0 0 14px; color: #64748B; font-size: 12px; line-height: 1.6; }
+.destination a { display: inline-flex; align-items: center; gap: 6px; color: #2563EB; font-size: 11px; font-weight: 600; }
+.destination a:hover { color: #1D4ED8; }
+.whySection { display: grid; grid-template-columns: .85fr 1.15fr; gap: 48px; padding: clamp(38px, 5vw, 60px) max(28px, calc((100vw - 1184px) / 2)); background: #F8FAFC; }
+.whyIntro h2 { max-width: 350px; }
+.whyPoints { display: grid; gap: 12px; }
+.whyPoints p { margin: 0; padding: 12px 0; border-bottom: 1px solid #E2E8F0; color: #64748B; font-size: 12px; line-height: 1.6; }
+.whyPoints p:last-child { border-bottom: 0; }
+.whyPoints strong { color: #0F172A; font-weight: 600; }
+@media (max-width: 960px) { .heroInner { grid-template-columns: 1fr; max-width: 700px; gap: 32px; } .heroCopy { max-width: 650px; } .capabilityGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .whySection { grid-template-columns: 1fr; gap: 18px; padding-right: 28px; padding-left: 28px; } }
+@media (max-width: 640px) { .hero { padding: 34px 16px 42px; } .heroInner { gap: 27px; } .heroCopy h1 { font-size: clamp(35px, 10vw, 46px); } .heroCopy > p { font-size: 14px; } .viewerHeader, .viewerFooter { padding: 10px; } .annotation { font-size: 8px; padding: 4px 6px; } .imageCaption { max-width: 78%; font-size: 7px; } .capabilitySection { padding: 14px 16px; } .capabilityGrid { gap: 4px; } .capability { gap: 8px; padding: 8px 2px; } .capabilityIcon { width: 28px; height: 28px; } .capability h2 { font-size: 11px; } .capability p { font-size: 9px; } .platformSection { padding: 48px 16px; } .destinationGrid { grid-template-columns: 1fr; } .destination { min-height: 0; } .destination p { min-height: 0; } .whySection { padding: 38px 16px; } }

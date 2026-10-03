@@ -1,0 +1,219 @@
+name: Dental AI Security Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+
+jobs:
+
+  # ============================================================
+  # 1. SECRET SCANNING
+  # ============================================================
+  gitleaks:
+    name: 🔐 Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@2e283b8b6e68078e47c1a7b5791338a0f02542ff # v2.3.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================
+  # 2. CODEQL SAST
+  # ============================================================
+  codeql:
+    name: 🧠 CodeQL SAST
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - python
+          - javascript-typescript
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@df4488fd36f2f0a8edc02058e5f14e7a83dcb7c6 # v3.28.10
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@df4488fd36f2f0a8edc02058e5f14e7a83dcb7c6 # v3.28.10
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@df4488fd36f2f0a8edc02058e5f14e7a83dcb7c6 # v3.28.10
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ============================================================
+  # 3. SEMGREP - OWASP TOP 10 + SAST
+  # ============================================================
+  semgrep:
+    name: 🛡️ Semgrep OWASP / SAST
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    container:
+      image: semgrep/semgrep:latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Semgrep Security Scan
+        run: |
+          semgrep scan \
+            --config p/python \
+            --config p/javascript \
+            --config p/typescript \
+            --config p/owasp-top-ten \
+            --config p/security-audit \
+            --error \
+            --json-output=semgrep.json \
+            --sarif-output=semgrep.sarif \
+            .
+
+      - name: Upload Semgrep JSON
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        if: always()
+        with:
+          name: semgrep-report
+          path: semgrep.json
+
+      - name: Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@df4488fd36f2f0a8edc02058e5f14e7a83dcb7c6 # v3.28.10
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+
+  # ============================================================
+  # 4. BANDIT - PYTHON SECURITY
+  # ============================================================
+  bandit:
+    name: 🐍 Bandit Python Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Bandit Scan
+        run: |
+          bandit -r ml-service \
+            -f screen \
+            -ll
+
+  # ============================================================
+  # 5. PYTHON DEPENDENCY CVEs
+  # ============================================================
+  pip-audit:
+    name: 📦 Python Dependency CVE Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+      - name: Audit ML dependencies
+        run: |
+          pip-audit -r ml-service/requirements.txt
+
+  # ============================================================
+  # 6. NPM DEPENDENCY CVEs
+  # ============================================================
+  npm-audit:
+    name: 📦 NPM Dependency Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: NPM audit
+        run: npm audit --audit-level=high
+
+  # ============================================================
+  # 7. CODE QUALITY
+  # ============================================================
+  code-quality:
+    name: 🧹 Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Python quality
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Ruff
+        run: ruff check ml-service
+
+      # JavaScript / Next.js quality
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint

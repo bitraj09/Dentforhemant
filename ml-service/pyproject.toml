@@ -1,0 +1,20 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [
+    "models/Restrictive-Hierarchical-Semantic-Segmentation",
+    "models/dental-segmentation",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "BLE", "C4", "SIM", "RUF"]
+ignore = [
+    "B008",    # FastAPI File(...) dependency injection in main.py
+    "BLE001",  # Broad exception handling for optional ML imports/model loading fallbacks
+    "E501",    # Line length
+    "RUF001",  # Unicode character (EN DASH) in user-facing age range strings
+]
+
+
+
+

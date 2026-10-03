@@ -1,0 +1,32 @@
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+
+/* ── Variants ── */
+.raised {
+  box-shadow: var(--shadow-sm);
+}
+
+.inset {
+  background: var(--surface-2);
+  border-color: transparent;
+}
+
+/* ── Interactive ── */
+.interactive {
+  cursor: pointer;
+}
+
+.interactive:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.interactive:active {
+  box-shadow: none;
+}

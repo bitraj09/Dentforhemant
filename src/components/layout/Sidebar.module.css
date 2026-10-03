@@ -1,0 +1,258 @@
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR — Clinical SaaS shell navigation
+   240px expanded, 64px collapsed
+   ═══════════════════════════════════════════════════════════ */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  width: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  transition: width var(--duration-slow) var(--ease-out);
+  overflow: hidden;
+}
+
+.collapsed {
+  width: var(--sidebar-collapsed);
+}
+
+/* ── Brand ── */
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar-height);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--text);
+  min-width: 0;
+}
+
+.brandIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.brandText {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.collapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.collapseBtn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.collapsed .collapseBtn {
+  transform: rotate(180deg);
+}
+
+/* ── Navigation ── */
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-2) 0;
+}
+
+.section {
+  padding: var(--space-1) 0;
+}
+
+.sectionLabel {
+  display: block;
+  padding: var(--space-2) var(--space-4) var(--space-1);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  margin: 1px var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.link:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.link.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: var(--weight-medium);
+}
+
+.link svg {
+  flex-shrink: 0;
+}
+
+/* Collapsed: center icons */
+.collapsed .link {
+  justify-content: center;
+  padding: 0;
+  margin: 1px var(--space-1);
+}
+
+.collapsed .sectionLabel {
+  display: none;
+}
+
+/* ── User footer ── */
+.userFooter {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  min-height: 44px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.userAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.userName {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.logoutBtn:hover {
+  background: var(--critical-soft);
+  color: var(--critical);
+}
+
+.signInLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.signInLink:hover {
+  color: var(--primary-hover);
+}
+
+.backdrop {
+  display: none;
+  padding: 0;
+  border: 0;
+}
+
+/* ── Mobile: hide sidebar by default, show as overlay ── */
+@media (max-width: 768px) {
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-sticky) - 1);
+    background: rgba(15, 27, 42, 0.45);
+    backdrop-filter: blur(2px);
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-overlay);
+  }
+
+  .sidebar.mobileOpen {
+    transform: translateX(0);
+  }
+}

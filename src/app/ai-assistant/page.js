@@ -1,0 +1,176 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { ArrowUp, BookOpen, BrainCircuit, CircleHelp, FileImage, Plus, ShieldCheck } from 'lucide-react';
+import { useDentalState } from '@/context/DentalStateContext';
+import styles from './page.module.css';
+
+const suggestions = [
+  { icon: CircleHelp, text: 'Explain periapical lesions' },
+  { icon: BookOpen, text: 'What is the mandibular canal?' },
+  { icon: FileImage, text: 'How should I review an OPG?' },
+  { icon: BrainCircuit, text: 'Help me study landmarks' },
+];
+
+export default function AssistantPage() {
+  const { diagnosisImage, diagnosisState } = useDentalState();
+  const [messages, setMessages] = useState([]);
+  const [question, setQuestion] = useState('');
+  const [context, setContext] = useState('');
+  const [showContext, setShowContext] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [retryQuestion, setRetryQuestion] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gemini');
+  const [includeDiagnosisImage, setIncludeDiagnosisImage] = useState(false);
+  const feedRef = useRef(null);
+
+  useEffect(() => {
+    const source = new URLSearchParams(window.location.search).get('source');
+    if (source === 'learning') {
+      setContext('The user is studying mandibular and maxillary bony landmarks. Keep the discussion educational and explain relevant anatomy in clear terms.');
+      setShowContext(true);
+      return;
+    }
+    if (source !== 'diagnosis') return;
+    const findingsContext = (diagnosisState?.findings || []).map((finding) => {
+      const details = [finding.severity, finding.description].filter(Boolean).join(' · ');
+      return `${finding.name}${details ? `: ${details}` : ''}`;
+    });
+    const diagnosisContext = [diagnosisState?.summary, ...findingsContext].filter(Boolean).join('\n');
+    if (diagnosisContext) {
+      setContext(diagnosisContext);
+      setShowContext(true);
+    }
+  }, [diagnosisState]);
+
+  useEffect(() => {
+    feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, loading]);
+
+  const sendMessage = async (text, retry = false) => {
+    const content = text.trim();
+    if (!content || loading) return;
+    const attachImage = selectedModel === 'gemini' && (retry
+      ? messages.filter((message) => message.role === 'user').at(-1)?.imageAttached
+      : includeDiagnosisImage && Boolean(diagnosisImage));
+    const nextMessages = retry ? messages : [...messages, { role: 'user', content, imageAttached: Boolean(attachImage) }];
+    if (!retry) setMessages(nextMessages);
+    setQuestion('');
+    setLoading(true);
+    setError('');
+    setRetryQuestion('');
+
+    try {
+      const response = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: nextMessages, context, model: selectedModel, image: attachImage ? diagnosisImage : '' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'The assistant could not answer right now.');
+      setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
+    } catch (requestError) {
+      setError(requestError.message || 'The assistant could not answer right now.');
+      setRetryQuestion(content);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startNewChat = () => {
+    setMessages([]);
+    setQuestion('');
+    setError('');
+    setRetryQuestion('');
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage(question);
+    }
+  };
+
+  return (
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div className={styles.heading}>
+          <span className={styles.assistantMark}><BrainCircuit size={19} /></span>
+          <div><p className={styles.eyebrow}>DENTEX Dental Studio</p><h1>Dental AI Assistant</h1></div>
+        </div>
+        <div className={styles.headerActions}>
+          <label className={styles.modelSelector}>
+            <span>Model</span>
+            <select value={selectedModel} onChange={(event) => { setSelectedModel(event.target.value); setIncludeDiagnosisImage(false); }}>
+              <option value="gemini">Gemini 3.8 Flash</option>
+              <option value="pall">PALL-Text</option>
+            </select>
+          </label>
+          <button type="button" className={styles.newChat} onClick={startNewChat}><Plus size={15} /> New conversation</button>
+        </div>
+      </header>
+
+      <p className={styles.modelNote}>{selectedModel === 'gemini' ? 'Gemini 3.8 Flash · image-aware chat when you attach the current diagnosis scan.' : 'Harisundar/PALL-Text · text-only chat; scan images aren’t sent.'}</p>
+
+      {selectedModel === 'gemini' && diagnosisImage && (
+        <div className={styles.imageContextRow}>
+          <button type="button" className={styles.imageContext} aria-pressed={includeDiagnosisImage} onClick={() => setIncludeDiagnosisImage((value) => !value)}>
+            <FileImage size={15} /> {includeDiagnosisImage ? 'Diagnosis scan attached' : 'Attach current diagnosis scan'}
+          </button>
+          <span>{includeDiagnosisImage ? 'The scan will be sent with your next question.' : 'Optional · sent only when enabled.'}</span>
+        </div>
+      )}
+
+      <section className={styles.chat} aria-label="Dental AI Assistant conversation">
+        <div className={styles.feed} ref={feedRef} aria-live="polite" aria-relevant="additions text">
+          {messages.length === 0 ? (
+            <div className={styles.welcome}>
+              <span className={styles.welcomeIcon}><BrainCircuit size={23} /></span>
+              <h2>How can I help with your dental work?</h2>
+              <p>Ask about anatomy, common pathologies, radiographic interpretation, or study material.</p>
+              <div className={styles.suggestions}>
+                {suggestions.map(({ icon: Icon, text }) => (
+                  <button key={text} type="button" className={styles.suggestion} onClick={() => sendMessage(text)}>
+                    <Icon size={16} /><span>{text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className={styles.messages}>
+              {messages.map((message, index) => (
+                <article className={`${styles.message} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`} key={`${message.role}-${index}`}>
+                  {message.role === 'assistant' && <span className={styles.messageIcon}><BrainCircuit size={15} /></span>}
+                  <div className={styles.messageBody}>
+                    <span className={styles.messageRole}>{message.role === 'user' ? 'You' : 'Dental AI Assistant'}</span>
+                    <p>{message.content}</p>
+                    {message.imageAttached && <span className={styles.attachedLabel}><FileImage size={12} /> Diagnosis scan attached</span>}
+                  </div>
+                </article>
+              ))}
+              {loading && <div className={styles.loadingMessage}><span className={styles.loader} /> Preparing a response…</div>}
+              {error && <div className={styles.errorMessage} role="alert"><span>{error}</span>{retryQuestion && <button type="button" onClick={() => sendMessage(retryQuestion, true)}>Try again</button>}</div>}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.composerArea}>
+          {showContext && (
+            <label className={styles.contextField}>
+              <span>Case or study context <span>Optional · avoid identifying patient details</span></span>
+              <textarea value={context} onChange={(event) => setContext(event.target.value)} maxLength={2500} rows={3} placeholder="Add a brief description to help frame your question…" />
+            </label>
+          )}
+          <div className={styles.composer}>
+            <button type="button" className={styles.contextToggle} aria-expanded={showContext} onClick={() => setShowContext((value) => !value)} title="Add case context"><Plus size={17} /></button>
+            <label className={styles.srOnly} htmlFor="assistant-question">Ask a question</label>
+            <textarea id="assistant-question" value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={handleKeyDown} rows={1} maxLength={2500} placeholder="Ask a question about dental imaging or learning…" disabled={loading} />
+            <button type="button" className={styles.sendButton} onClick={() => sendMessage(question)} disabled={!question.trim() || loading} aria-label="Send question"><ArrowUp size={17} /></button>
+          </div>
+          <p className={styles.disclaimer}><ShieldCheck size={13} /> AI responses may be incomplete. They support learning and review and are not a clinical diagnosis.</p>
+        </div>
+      </section>
+    </div>
+  );
+}
