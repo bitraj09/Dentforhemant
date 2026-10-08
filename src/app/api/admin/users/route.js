@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
+import bcrypt from 'bcrypt';
 
 /**
  * Verify the requesting user is an ADMIN.
@@ -52,6 +53,12 @@ export async function GET(req) {
         orderBy: { createdAt: 'desc' },
     });
 
+    const safeUsers = users.map(({ id, idCardPath, ...user }) => ({
+        ...user,
+        id,
+        idCardPath: idCardPath ? `/api/admin/users/${id}/verification` : null,
+    }));
+
     // Count by status
     const counts = await prisma.user.groupBy({
         by: ['status'],
@@ -70,7 +77,7 @@ export async function GET(req) {
         stats.total += c._count;
     });
 
-    return NextResponse.json({ users, stats }, {
+    return NextResponse.json({ users: safeUsers, stats }, {
         headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
     });
 }
@@ -86,7 +93,7 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { userId, action, reason, password, secretKey } = await req.json();
+    const { userId, action, reason, password } = await req.json();
 
     if (!userId || !['approve', 'reject', 'delete'].includes(action)) {
         return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
@@ -98,8 +105,8 @@ export async function POST(req) {
     }
 
     if (action === 'delete') {
-        if (secretKey !== '0905') {
-            return NextResponse.json({ error: 'Invalid secret key' }, { status: 403 });
+        if (typeof password !== 'string' || !(await bcrypt.compare(password, admin.password))) {
+            return NextResponse.json({ error: 'Password verification failed.' }, { status: 403 });
         }
 
         try {

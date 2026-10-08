@@ -6,7 +6,7 @@
     "clean": "rimraf .next",
     "dev": "next dev",
     "dev:clean": "rimraf .next && next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "make-admin": "node scripts/make-admin.js"
@@ -31,6 +31,7 @@
     "react-dom": "19.2.3",
     "react-dropzone": "^15.0.0",
     "react-icons": "^5.5.0",
+    "sharp": "0.35.5",
     "three": "^0.183.1"
   },
   "devDependencies": {
@@ -40,6 +41,7 @@
     "rimraf": "^6.1.3"
   },
   "overrides": {
-    "brace-expansion": "^1.1.21"
+    "brace-expansion": "^1.1.21",
+    "@grpc/grpc-js": "^1.13.6"
   }
 }

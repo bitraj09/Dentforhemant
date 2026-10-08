@@ -1,4 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { validateImageDataUrl } from '@/utils/image-validation';
+import { getGeminiApiKey } from '@/lib/llm-config';
 
 const VALIDATION_PROMPT = `Analyze this image and determine if it is a valid panoramic dental OPG (Orthopantomogram) radiograph.
 This system ONLY accepts panoramic dental OPG X-ray images. If the image is a regular photo, a document, a chest/hand/spine X-ray, a single tooth X-ray (periapical/bitewing), or any other non-panoramic dental X-ray, it is NOT a valid OPG.
@@ -15,7 +17,9 @@ Respond ONLY with a JSON object in this exact format:
  * @returns {Promise<{isValid: boolean, reason?: string}>}
  */
 export async function validateOpgImage(image) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const decoded = await validateImageDataUrl(image);
+    if (!decoded.ok) return { isValid: false, reason: decoded.reason, status: decoded.status };
+    const apiKey = await getGeminiApiKey();
     if (!apiKey) {
         console.warn('[Validation] GEMINI_API_KEY is not configured. Bypassing validation.');
         return { isValid: true };

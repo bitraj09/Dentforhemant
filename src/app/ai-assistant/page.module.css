@@ -7,7 +7,7 @@
 .heading h1 { margin: 0; color: #0F172A; font-size: 18px; font-weight: 620; letter-spacing: -.02em; }
 .headerActions { display: flex; align-items: center; gap: 10px; }
 .modelSelector { display: flex; align-items: center; gap: 7px; color: #64748B; font-size: 10px; }
-.modelSelector select { min-height: 34px; padding: 0 26px 0 9px; border: 1px solid #D1D5DB; border-radius: 6px; background: #fff; color: #334155; font-size: 11px; }
+.modelSelector { min-height: 34px; padding: 0 10px; border: 1px solid #D1D5DB; border-radius: 6px; background: #fff; color: #334155; font-size: 11px; }
 .newChat { display: inline-flex; min-height: 34px; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid #D1D5DB; border-radius: 6px; background: #fff; color: #334155; cursor: pointer; font-size: 11px; }
 .newChat:hover { background: #F8FAFC; border-color: #CBD5E1; }
 .modelNote { max-width: 1050px; width: 100%; margin: -8px auto 12px; color: #64748B; font-size: 10px; }

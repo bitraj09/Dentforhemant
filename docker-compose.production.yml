@@ -1,0 +1,17 @@
+# Production overlay. Start with:
+# docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+services:
+  web:
+    environment:
+      NODE_ENV: production
+      RUN_DB_MIGRATIONS: "false"
+      PRIVATE_UPLOAD_DIR: /data/uploads
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?set NEXTAUTH_URL to the HTTPS site URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
+      ML_API_KEY: ${ML_API_KEY:?set ML_API_KEY}
+      ML_SERVICE_URL: http://ml-service:8001
+
+  ml-service:
+    environment:
+      ML_API_KEY: ${ML_API_KEY:?set ML_API_KEY}
+      CORS_ORIGINS: ${ALLOWED_ORIGINS:?set ALLOWED_ORIGINS}

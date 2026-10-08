@@ -109,7 +109,7 @@ export default function AppShell({ children }) {
             <span className={styles.brandIcon}>
               <TbDental size={22} />
             </span>
-            <span className={styles.brandTitle}>DENTEX</span>
+            <span className={styles.brandTitle}>Dental AI</span>
           </Link>
 
           <span className={styles.authProductName}>Dental Studio</span>
@@ -130,7 +130,7 @@ export default function AppShell({ children }) {
               <span className={styles.brandIcon}>
                 <TbDental size={22} />
               </span>
-              <span className={styles.brandTitle}>DENTEX</span>
+              <span className={styles.brandTitle}>Dental AI</span>
               <span className={styles.clinicalBadge}>Dental Studio</span>
             </Link>
 
@@ -180,7 +180,7 @@ export default function AppShell({ children }) {
                 <span className={styles.brandIcon}>
                   <TbDental size={18} />
                 </span>
-                <span className={styles.brandTitle}>DENTEX</span>
+                <span className={styles.brandTitle}>Dental AI</span>
               </div>
               <p className={styles.footerDisclaimer}>
                 AI-powered dental imaging, clinical learning, and research in one integrated studio.
@@ -216,7 +216,7 @@ export default function AppShell({ children }) {
           </div>
 
           <div className={styles.footerBottom}>
-            <span>&copy; {new Date().getFullYear()} DENTEX Dental Studio. All rights reserved.</span>
+            <span>&copy; {new Date().getFullYear()} Dental AI Dental Studio. All rights reserved.</span>
             <div className={styles.footerBottomLinks}>
               <Link href="/about" className={styles.footerSubLink}>About</Link>
               <Link href="/login" className={styles.footerSubLink}>Clinician Login</Link>

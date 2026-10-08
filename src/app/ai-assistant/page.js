@@ -21,7 +21,6 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [retryQuestion, setRetryQuestion] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gemini');
   const [includeDiagnosisImage, setIncludeDiagnosisImage] = useState(false);
   const feedRef = useRef(null);
 
@@ -51,9 +50,9 @@ export default function AssistantPage() {
   const sendMessage = async (text, retry = false) => {
     const content = text.trim();
     if (!content || loading) return;
-    const attachImage = selectedModel === 'gemini' && (retry
+    const attachImage = retry
       ? messages.filter((message) => message.role === 'user').at(-1)?.imageAttached
-      : includeDiagnosisImage && Boolean(diagnosisImage));
+      : includeDiagnosisImage && Boolean(diagnosisImage);
     const nextMessages = retry ? messages : [...messages, { role: 'user', content, imageAttached: Boolean(attachImage) }];
     if (!retry) setMessages(nextMessages);
     setQuestion('');
@@ -65,7 +64,7 @@ export default function AssistantPage() {
       const response = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages, context, model: selectedModel, image: attachImage ? diagnosisImage : '' }),
+        body: JSON.stringify({ messages: nextMessages, context, image: attachImage ? diagnosisImage : '' }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'The assistant could not answer right now.');
@@ -97,23 +96,17 @@ export default function AssistantPage() {
       <header className={styles.header}>
         <div className={styles.heading}>
           <span className={styles.assistantMark}><BrainCircuit size={19} /></span>
-          <div><p className={styles.eyebrow}>DENTEX Dental Studio</p><h1>Dental AI Assistant</h1></div>
+          <div><p className={styles.eyebrow}>Dental AI Dental Studio</p><h1>Dental AI Assistant</h1></div>
         </div>
         <div className={styles.headerActions}>
-          <label className={styles.modelSelector}>
-            <span>Model</span>
-            <select value={selectedModel} onChange={(event) => { setSelectedModel(event.target.value); setIncludeDiagnosisImage(false); }}>
-              <option value="gemini">Gemini 3.8 Flash</option>
-              <option value="pall">PALL-Text</option>
-            </select>
-          </label>
+          <span className={styles.modelSelector}>Gemini 3.8 Flash</span>
           <button type="button" className={styles.newChat} onClick={startNewChat}><Plus size={15} /> New conversation</button>
         </div>
       </header>
 
-      <p className={styles.modelNote}>{selectedModel === 'gemini' ? 'Gemini 3.8 Flash · image-aware chat when you attach the current diagnosis scan.' : 'Harisundar/PALL-Text · text-only chat; scan images aren’t sent.'}</p>
+      <p className={styles.modelNote}>Gemini 3.8 Flash · image-aware chat when you attach the current diagnosis scan.</p>
 
-      {selectedModel === 'gemini' && diagnosisImage && (
+      {diagnosisImage && (
         <div className={styles.imageContextRow}>
           <button type="button" className={styles.imageContext} aria-pressed={includeDiagnosisImage} onClick={() => setIncludeDiagnosisImage((value) => !value)}>
             <FileImage size={15} /> {includeDiagnosisImage ? 'Diagnosis scan attached' : 'Attach current diagnosis scan'}

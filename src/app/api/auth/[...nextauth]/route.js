@@ -75,7 +75,7 @@ export const authOptions = {
                     }
                 } catch (e) {
                     // If DB is unreachable, keep existing token values
-                    console.error('[JWT Refresh] DB error:', e.message);
+                    console.error('[JWT Refresh] Database refresh failed.', { name: e?.name, code: e?.code });
                 }
             }
 
@@ -95,6 +95,7 @@ export const authOptions = {
         signIn: "/login",
     },
     secret: process.env.NEXTAUTH_SECRET,
+    useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https://") ?? process.env.NODE_ENV === "production",
 };
 
 const handler = NextAuth(authOptions);

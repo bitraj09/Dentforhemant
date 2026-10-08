@@ -16,7 +16,11 @@ export async function GET(req) {
 
         const users = await prisma.user.findMany({
             where: role ? { role: role.toUpperCase() } : {},
-            include: { _count: { select: { records: true } } },
+            select: {
+                id: true, name: true, email: true, role: true, status: true,
+                collegeName: true, createdAt: true,
+                _count: { select: { records: true } },
+            },
             orderBy: { createdAt: 'desc' }
         });
 
@@ -61,7 +65,8 @@ export async function POST(req) {
                     collegeName: collegeName || 'Admin Assigned',
                     collegeYear: 'N/A',
                     collegeIdNumber: 'N/A',
-                }
+                },
+                select: { id: true, name: true, email: true, role: true, status: true },
             });
             return NextResponse.json({ success: true, user });
         }
@@ -69,6 +74,6 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     } catch (error) {
         console.error('Action error:', error);
-        return NextResponse.json({ error: 'Failed to process action: ' + error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to process the requested action.' }, { status: 500 });
     }
 }

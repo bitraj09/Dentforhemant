@@ -8,7 +8,7 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-/** The DENTEX interface is intentionally light-only. Kept as a provider so
+/** The Dental AI interface is intentionally light-only. Kept as a provider so
  * existing components that consume useTheme remain compatible. */
 export default function ThemeProvider({ children }) {
   useEffect(() => {

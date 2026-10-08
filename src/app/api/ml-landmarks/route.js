@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateOpgImage } from '@/utils/validation';
+import { requireApprovedSession } from '@/lib/auth-guard';
 
 const ML_SERVICE_URL = (process.env.ML_SERVICE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '');
 
@@ -10,10 +11,15 @@ const ML_SERVICE_URL = (process.env.ML_SERVICE_URL || 'http://127.0.0.1:8001').r
  */
 export async function POST(req) {
     try {
+        const { error: authError } = await requireApprovedSession();
+        if (authError) return authError;
         const { image, imageWidth, imageHeight } = await req.json();
 
         if (!image) {
             return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+        }
+        if (typeof image !== 'string' || image.length > 28_000_000) {
+            return NextResponse.json({ error: 'Image is too large or invalid.' }, { status: 413 });
         }
 
         // Validate if the image is a valid panoramic OPG dental radiograph
@@ -25,7 +31,7 @@ export async function POST(req) {
                 summary: validation.reason || 'The uploaded image does not appear to be a valid OPG dental X-ray. Please upload a panoramic dental radiograph.',
                 isValidXray: false,
                 source: 'yolo',
-            });
+            }, { status: validation.status || 200 });
         }
 
         // Convert base64 dataURL → binary buffer → Blob
@@ -43,12 +49,13 @@ export async function POST(req) {
         // Call FastAPI landmark endpoint
         const mlRes = await fetch(`${ML_SERVICE_URL}/landmarks`, {
             method: 'POST',
+            headers: { 'X-ML-API-Key': process.env.ML_API_KEY || '', 'X-Request-ID': req.headers.get('x-request-id') || '' },
             body: formData,
+            signal: AbortSignal.timeout(90_000),
         });
 
         if (!mlRes.ok) {
-            const errorText = await mlRes.text();
-            throw new Error(`ML Service Error: ${mlRes.status} — ${errorText}`);
+            throw new Error(`ML Service returned ${mlRes.status}`);
         }
 
         const data = await mlRes.json();
@@ -76,8 +83,8 @@ export async function POST(req) {
     } catch (error) {
         console.error('[ML Landmarks API Error]', error);
         return NextResponse.json(
-            { error: error.message },
-            { status: 500 }
+            { error: 'Landmark analysis is temporarily unavailable.' },
+            { status: 503 }
         );
     }
 }

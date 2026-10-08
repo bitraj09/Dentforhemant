@@ -217,3 +217,53 @@ jobs:
 
       - name: ESLint
         run: npm run lint
+
+  # ============================================================
+  # 8. PRODUCTION BUILD AND CONTAINER CONFIGURATION
+  # ============================================================
+  production-validation:
+    name: 🏗️ Production Build Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      MYSQL_ROOT_PASSWORD: ci_root_placeholder
+      MYSQL_DATABASE: dental
+      MYSQL_USER: dental
+      MYSQL_PASSWORD: ci_db_placeholder
+      NEXTAUTH_URL: https://example.invalid
+      NEXTAUTH_SECRET: ci_only_not_a_deployment_secret
+      ML_API_KEY: ci_only_not_a_deployment_secret
+      ALLOWED_ORIGINS: https://example.invalid
+      GEMINI_API_KEY: ""
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Validate Python syntax
+        run: python -m py_compile ml-service/main.py ml-service/forensic_pipeline.py
+
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Next.js production build
+        run: npm run build
+
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Validate production Compose configuration
+        run: docker compose --env-file .env.docker.example -f docker-compose.yml -f docker-compose.production.yml config --quiet
+
+      - name: Build production service images
+        run: docker compose --env-file .env.docker.example -f docker-compose.yml -f docker-compose.production.yml build

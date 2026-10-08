@@ -174,6 +174,8 @@ The application includes a verification pipeline to restrict sensitive diagnosti
 
 ## 🚀 Quick Start & Deployment
 
+For a production DigitalOcean deployment, use the hardened Compose overlay and deployment runbook in [docs/DEPLOYMENT_DIGITALOCEAN.md](docs/DEPLOYMENT_DIGITALOCEAN.md). The public production entry point is Nginx on ports 80/443; the app, database, and ML service must not be exposed directly.
+
 ### Prerequisites
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
 

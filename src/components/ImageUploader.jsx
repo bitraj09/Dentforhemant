@@ -26,7 +26,7 @@ export default function ImageUploader({ onImageSelect, label = 'Upload Dental Ra
         onDrop,
         accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.bmp'] },
         maxFiles: 1,
-        maxSize: 20 * 1024 * 1024,
+        maxSize: 15 * 1024 * 1024,
     });
 
     const clearImage = (e) => {
@@ -62,7 +62,7 @@ export default function ImageUploader({ onImageSelect, label = 'Upload Dental Ra
                         <p className={styles.hint}>
                             {isDragActive ? 'Drop the radiograph here…' : 'Drag & drop an image or click to browse'}
                         </p>
-                        <p className={styles.formats}>Supports PNG, JPG, WebP • Max 20 MB</p>
+                        <p className={styles.formats}>Supports PNG, JPG, WebP • Max 15 MB</p>
                     </motion.div>
                 ) : (
                     <motion.div

@@ -29,11 +29,14 @@ export async function proxy(request) {
         pathname.startsWith("/_next") ||
         pathname.startsWith("/favicon") ||
         pathname.startsWith("/icons") ||
-        pathname.startsWith("/uploads") ||
         pathname === "/manifest.json" ||
         pathname === "/sw.js"
     ) {
         return NextResponse.next();
+    }
+
+    if (pathname.startsWith("/uploads")) {
+        return new NextResponse(null, { status: 404 });
     }
 
     // ─── No token → redirect to login ───
@@ -82,6 +85,7 @@ export const config = {
         "/api/admin/:path*",
         "/api/records/:path*",
         "/api/assistant/:path*",
+        "/uploads/:path*",
         "/api/gemini-diagnose/:path*",
         "/api/gemini-forensics/:path*",
         "/api/gemini-landmarks/:path*",

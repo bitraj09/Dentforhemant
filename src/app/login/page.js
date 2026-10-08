@@ -63,7 +63,7 @@ function LoginForm() {
                     <TbDental size={32} />
                 </motion.div>
                 <h1>Welcome Back</h1>
-                <p>Sign in to your DENTEX Dental Studio account.</p>
+                <p>Sign in to your Dental AI Dental Studio account.</p>
             </div>
 
             {/* Messages */}

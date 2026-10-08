@@ -9,8 +9,6 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-dental}
       MYSQL_USER: ${MYSQL_USER:-dental}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
-    ports:
-      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -27,6 +25,7 @@ services:
     init: true
     environment:
       ML_API_KEY: ${ML_API_KEY:?set ML_API_KEY}
+      CORS_ORIGINS: ${ALLOWED_ORIGINS:-}
     # Only expose internally within Docker network — not to host
     expose:
       - "8001"
@@ -55,12 +54,16 @@ services:
       ML_API_KEY: ${ML_API_KEY:?set ML_API_KEY}
       DATABASE_URL: mysql://${MYSQL_USER:-dental}:${MYSQL_PASSWORD:?set MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-dental}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?set NEXTAUTH_URL}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-true}
+      PRIVATE_UPLOAD_DIR: /data/uploads
+      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-false}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - private_uploads:/data/uploads
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -68,3 +71,4 @@ services:
 
 volumes:
   mysql_data:
+  private_uploads:

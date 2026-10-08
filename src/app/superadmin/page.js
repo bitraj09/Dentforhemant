@@ -47,7 +47,7 @@ export default function SuperAdminPage() {
         }
     }, [status, session]);
 
-    const fetchConfig = async () => {
+    async function fetchConfig() {
         try {
             const res = await fetch('/api/superadmin/config');
             const data = await res.json();
@@ -61,9 +61,9 @@ export default function SuperAdminPage() {
         } catch (err) {
             console.error(err);
         }
-    };
+    }
 
-    const fetchUsers = async () => {
+    async function fetchUsers() {
         try {
             const res = await fetch('/api/superadmin/users');
             const data = await res.json();
@@ -75,7 +75,7 @@ export default function SuperAdminPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }
 
     const toggleFeature = async (key, currentValue) => {
         const newValue = currentValue === 'false' ? 'true' : 'false';

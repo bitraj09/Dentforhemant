@@ -17,6 +17,11 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "recovery/**",
+    "node_modules/**",
+    ".venv/**",
+    "**/.venv/**",
+    "ml-service/**",
+    ".ruff_cache/**",
   ]),
 ]);
 

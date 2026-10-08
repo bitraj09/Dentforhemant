@@ -16,6 +16,18 @@ export default function HistoryPage() {
     const [deletingId, setDeletingId] = useState(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
+    async function fetchRecords() {
+        try {
+            const res = await fetch('/api/records', { cache: 'no-store' });
+            const data = await res.json();
+            if (data.records) setRecords(data.records);
+        } catch (error) {
+            console.error('Failed to fetch records:', error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/login');
@@ -23,20 +35,6 @@ export default function HistoryPage() {
             fetchRecords();
         }
     }, [status]);
-
-    const fetchRecords = async () => {
-        try {
-            const res = await fetch('/api/records', { cache: 'no-store' });
-            const data = await res.json();
-            if (data.records) {
-                setRecords(data.records);
-            }
-        } catch (error) {
-            console.error('Failed to fetch records:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleDelete = async (id) => {
         setDeletingId(id);

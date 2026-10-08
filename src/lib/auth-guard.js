@@ -68,3 +68,10 @@ export async function requireAdmin() {
     }
     return { session, error: null };
 }
+
+/** Require a signed-in, approved account for expensive clinical or AI APIs. */
+export async function requireApprovedSession() {
+    const { session, error } = await requireApprovedUser();
+    if (error) return { session: null, error };
+    return { session, error: null };
+}

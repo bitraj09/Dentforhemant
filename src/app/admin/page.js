@@ -31,9 +31,13 @@ export default function AdminPage() {
     const [showRejectModal, setShowRejectModal] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(null);
     const [deletePassword, setDeletePassword] = useState('');
-    const [deleteSecretKey, setDeleteSecretKey] = useState('');
     const [activeModel, setActiveModel] = useState('GOOGLE_AI');
     const [modelLoading, setModelLoading] = useState(false);
+    const [geminiApiKey, setGeminiApiKey] = useState('');
+    const [geminiKeyConfigured, setGeminiKeyConfigured] = useState(false);
+    const [geminiKeySource, setGeminiKeySource] = useState('none');
+    const [geminiKeyLoading, setGeminiKeyLoading] = useState(false);
+    const [geminiKeyMessage, setGeminiKeyMessage] = useState('');
     const [refreshing, setRefreshing] = useState(false);
     const [zoomImage, setZoomImage] = useState(null);
 
@@ -47,10 +51,11 @@ export default function AdminPage() {
             }
             fetchUsers();
             fetchActiveModel();
+            fetchGeminiKeyStatus();
         }
     }, [status, session]);
 
-    const fetchUsers = async (statusFilter) => {
+    async function fetchUsers(statusFilter) {
         setRefreshing(true);
         try {
             const filterParam = statusFilter || filter;
@@ -64,9 +69,9 @@ export default function AdminPage() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }
 
-    const fetchActiveModel = async () => {
+    async function fetchActiveModel() {
         try {
             const res = await fetch('/api/admin/set-model', { cache: 'no-store' });
             const data = await res.json();
@@ -74,7 +79,60 @@ export default function AdminPage() {
         } catch (err) {
             console.error('Failed to fetch model:', err);
         }
-    };
+    }
+
+    async function fetchGeminiKeyStatus() {
+        try {
+            const res = await fetch('/api/admin/llm-config', { cache: 'no-store' });
+            const data = await res.json();
+            if (res.ok) {
+                setGeminiKeyConfigured(Boolean(data.isConfigured));
+                setGeminiKeySource(data.source || 'none');
+            }
+        } catch (err) {
+            console.error('Failed to fetch Gemini key status:', err);
+        }
+    }
+
+    async function saveGeminiKey(event) {
+        event.preventDefault();
+        setGeminiKeyLoading(true);
+        setGeminiKeyMessage('');
+        try {
+            const res = await fetch('/api/admin/llm-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey: geminiApiKey }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not save the Gemini API key.');
+            setGeminiApiKey('');
+            setGeminiKeyConfigured(true);
+            setGeminiKeySource('admin');
+            setGeminiKeyMessage('Gemini API key saved securely.');
+        } catch (err) {
+            setGeminiKeyMessage(err.message || 'Could not save the Gemini API key.');
+        } finally {
+            setGeminiKeyLoading(false);
+        }
+    }
+
+    async function removeGeminiKey() {
+        setGeminiKeyLoading(true);
+        setGeminiKeyMessage('');
+        try {
+            const res = await fetch('/api/admin/llm-config', { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not remove the saved Gemini API key.');
+            setGeminiKeyConfigured(Boolean(data.isConfigured));
+            setGeminiKeySource(data.source || 'none');
+            setGeminiKeyMessage(data.isConfigured ? 'Saved key removed. The environment key is still active.' : 'Gemini API key removed.');
+        } catch (err) {
+            setGeminiKeyMessage(err.message || 'Could not remove the saved Gemini API key.');
+        } finally {
+            setGeminiKeyLoading(false);
+        }
+    }
 
     const handleAction = async (userId, action, reason) => {
         setActionLoading(userId);
@@ -110,15 +168,13 @@ export default function AdminPage() {
                 body: JSON.stringify({
                     userId: showDeleteModal,
                     action: 'delete',
-                    password: deletePassword,
-                    secretKey: deleteSecretKey
+                    password: deletePassword
                 }),
             });
 
             if (res.ok) {
                 setShowDeleteModal(null);
                 setDeletePassword('');
-                setDeleteSecretKey('');
                 fetchUsers();
             } else {
                 const data = await res.json();
@@ -278,6 +334,50 @@ export default function AdminPage() {
                         ))}
                     </div>
                 </motion.div>
+
+                <motion.section
+                    className={styles.llmKeySection}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    aria-labelledby="gemini-key-title"
+                >
+                    <div className={styles.llmKeyHeading}>
+                        <div>
+                            <h2 className={styles.sectionTitle} id="gemini-key-title"><FiZap size={20} /> LLM API Configuration</h2>
+                            <p>Configure the Gemini API key used by the AI Assistant and Gemini analysis features.</p>
+                        </div>
+                        <span className={`${styles.keyStatus} ${geminiKeyConfigured ? styles.keyConfigured : ''}`}>
+                            {geminiKeyConfigured ? `Configured via ${geminiKeySource === 'admin' ? 'admin' : 'environment'}` : 'Not configured'}
+                        </span>
+                    </div>
+                    <form className={styles.llmKeyForm} onSubmit={saveGeminiKey}>
+                        <label htmlFor="gemini-api-key">Gemini API key</label>
+                        <input
+                            id="gemini-api-key"
+                            type="password"
+                            autoComplete="new-password"
+                            value={geminiApiKey}
+                            onChange={(event) => setGeminiApiKey(event.target.value)}
+                            placeholder={geminiKeyConfigured ? 'Enter a new key to replace the saved key' : 'Paste Gemini API key'}
+                            minLength={20}
+                            maxLength={500}
+                            required
+                        />
+                        <div className={styles.llmKeyActions}>
+                            <button type="submit" className="btn btn-primary" disabled={geminiKeyLoading || !geminiApiKey.trim()}>
+                                {geminiKeyLoading ? 'Saving…' : 'Save API key'}
+                            </button>
+                            {geminiKeySource === 'admin' && (
+                                <button type="button" className="btn btn-outline" onClick={removeGeminiKey} disabled={geminiKeyLoading}>
+                                    Remove saved key
+                                </button>
+                            )}
+                        </div>
+                        <p className={styles.llmKeyHint}>The key is encrypted before storage and never shown after saving. It is only sent to Google from the server.</p>
+                        {geminiKeyMessage && <p className={styles.llmKeyMessage} role="status">{geminiKeyMessage}</p>}
+                    </form>
+                </motion.section>
 
                 {/* Users List */}
                 <motion.div
@@ -505,7 +605,7 @@ export default function AdminPage() {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <h3 className={styles.modalTitle} style={{ color: '#ef4444' }}>Delete Admin</h3>
-                            <p className={styles.modalDesc}>Please enter your password and secret key to confirm administrative deletion.</p>
+                            <p className={styles.modalDesc}>Enter your password to confirm this deletion.</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px', marginBottom: '15px' }}>
                                 <input
                                     type="password"
@@ -515,24 +615,16 @@ export default function AdminPage() {
                                     onChange={(e) => setDeletePassword(e.target.value)}
                                     placeholder="Enter Password"
                                 />
-                                <input
-                                    type="password"
-                                    className={styles.modalTextarea}
-                                    style={{ minHeight: '40px', padding: '10px' }}
-                                    value={deleteSecretKey}
-                                    onChange={(e) => setDeleteSecretKey(e.target.value)}
-                                    placeholder="Enter Secret Key"
-                                />
                             </div>
                             <div className={styles.modalActions}>
                                 <button
                                     className={styles.rejectBtn}
                                     onClick={handleDeleteAdmin}
-                                    disabled={actionLoading === showDeleteModal || !deletePassword || !deleteSecretKey}
+                                    disabled={actionLoading === showDeleteModal || !deletePassword}
                                 >
                                     <FiUserX size={16} /> {actionLoading ? 'Deleting...' : 'Delete Admin'}
                                 </button>
-                                <button className="btn btn-ghost" onClick={() => { setShowDeleteModal(null); setDeletePassword(''); setDeleteSecretKey(''); }}>
+                                <button className="btn btn-ghost" onClick={() => { setShowDeleteModal(null); setDeletePassword(''); }}>
                                     Cancel
                                 </button>
                             </div>

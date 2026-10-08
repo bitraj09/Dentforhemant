@@ -45,6 +45,7 @@ export default function DiagnosisPage() {
     const [patientName, setPatientName] = useState('');
     const [configuredModel, setConfiguredModel] = useState('GOOGLE_AI');
     const imgRef = useRef(null);
+    const [imageScale, setImageScale] = useState({ sx: 1, sy: 1 });
 
     // Fetch the active model configured in Admin panel
     useEffect(() => {
@@ -218,13 +219,22 @@ export default function DiagnosisPage() {
 
     const onImgLoad = (e) => {
         setImgSize({ w: e.target.naturalWidth, h: e.target.naturalHeight });
+        const rect = e.currentTarget.getBoundingClientRect();
+        if (e.currentTarget.naturalWidth && e.currentTarget.naturalHeight) {
+            setImageScale({ sx: rect.width / e.currentTarget.naturalWidth, sy: rect.height / e.currentTarget.naturalHeight });
+        }
     };
 
-    const getScale = () => {
-        if (!imgRef.current || imgSize.w === 0) return { sx: 1, sy: 1 };
-        const rect = imgRef.current.getBoundingClientRect();
-        return { sx: rect.width / imgSize.w, sy: rect.height / imgSize.h };
-    };
+    useEffect(() => {
+        const updateScale = () => {
+            const imageElement = imgRef.current;
+            if (!imageElement?.naturalWidth || !imageElement?.naturalHeight) return;
+            const rect = imageElement.getBoundingClientRect();
+            setImageScale({ sx: rect.width / imageElement.naturalWidth, sy: rect.height / imageElement.naturalHeight });
+        };
+        window.addEventListener('resize', updateScale);
+        return () => window.removeEventListener('resize', updateScale);
+    }, [image, imgSize]);
 
     const groupedFindings = findings.reduce((acc, finding, idx) => {
         const zone = finding.toothZone || 'Unspecified Region';
@@ -360,7 +370,7 @@ export default function DiagnosisPage() {
 
                             {/* Bounding boxes */}
                             {findings.map((f, idx) => {
-                                const { sx, sy } = getScale();
+                                const { sx, sy } = imageScale;
                                 return (
                                     <motion.div
                                         key={idx}

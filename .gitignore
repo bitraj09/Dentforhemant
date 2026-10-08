@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+.private-uploads/
+private-uploads/
 
 # debug
 npm-debug.log*

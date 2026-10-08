@@ -101,7 +101,7 @@ export default function SignupPage() {
             >
                 <div className={styles.header}>
                     <h2>Create Student Account</h2>
-                    <p>Register with your college details to access DENTEX Dental Studio.</p>
+                    <p>Register with your college details to access Dental AI Dental Studio.</p>
                 </div>
 
                 {error && <div className={styles.error}>{error}</div>}

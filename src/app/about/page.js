@@ -12,13 +12,13 @@ export default function AboutPage() {
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
-        <span className={styles.eyebrow}>About DENTEX</span>
+        <span className={styles.eyebrow}>About Dental AI</span>
         <h1>Dental intelligence for learning, imaging, and research.</h1>
-        <p>DENTEX Dental Studio brings dental radiograph tools and educational resources together in one focused workspace for students, clinicians, and researchers.</p>
+        <p>Dental AI Dental Studio brings dental radiograph tools and educational resources together in one focused workspace for students, clinicians, and researchers.</p>
         <Link href="/studio" className={styles.action}>Explore the studio <ArrowRight size={16} /></Link>
       </section>
 
-      <section className={styles.principles} aria-label="What DENTEX brings together">
+      <section className={styles.principles} aria-label="What Dental AI brings together">
         {principles.map(({ icon: Icon, title, text }) => (
           <article className={styles.principle} key={title}>
             <span className={styles.icon}><Icon size={20} /></span>
@@ -30,7 +30,7 @@ export default function AboutPage() {
 
       <section className={styles.founders} aria-labelledby="founders-heading">
         <div>
-          <span className={styles.eyebrow}>The people behind DENTEX</span>
+          <span className={styles.eyebrow}>The people behind Dental AI</span>
           <h2 id="founders-heading">Our founders</h2>
         </div>
         <ul className={styles.founderList}>
@@ -42,7 +42,7 @@ export default function AboutPage() {
       <section className={styles.approach}>
         <div><span className={styles.eyebrow}>Our approach</span><h2>Useful context, clear workflows, human judgment.</h2></div>
         <div className={styles.approachCopy}>
-          <p>Dental imaging is information-rich. DENTEX helps users explore a scan, inspect findings, and connect image review with structured learning.</p>
+          <p>Dental imaging is information-rich. Dental AI helps users explore a scan, inspect findings, and connect image review with structured learning.</p>
           <p>AI-generated observations are decision-support aids. They may be incomplete or inaccurate and do not replace professional interpretation, diagnosis, or treatment planning.</p>
         </div>
       </section>

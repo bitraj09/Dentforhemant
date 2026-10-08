@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
+import { randomUUID } from 'crypto';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
+import { validateImageDataUrl } from '@/utils/image-validation';
 
 export async function POST(req) {
     try {
@@ -72,41 +74,48 @@ export async function POST(req) {
             return NextResponse.json({ error: 'File size too large. Max limit is 5MB.' }, { status: 400 });
         }
 
-        // Handle ID Card Upload
+        // Verification documents are stored privately; filenames come from the server only.
         let idCardPath = null;
+        let storedPath = null;
         if (idCard && idCard.size > 0) {
             const bytes = await idCard.arrayBuffer();
             const buffer = Buffer.from(bytes);
-
-            const uploadDir = join(process.cwd(), 'public', 'uploads');
-            try {
-                await mkdir(uploadDir, { recursive: true });
-            } catch (e) { }
-
-            const filename = `${Date.now()}-${idCard.name.replace(/\s+/g, '-')}`;
-            const path = join(uploadDir, filename);
-            await writeFile(path, buffer);
-            idCardPath = `/uploads/${filename}`;
+            const checked = await validateImageDataUrl(`data:${idCard.type};base64,${buffer.toString('base64')}`);
+            if (!checked.ok || !['image/jpeg', 'image/png', 'image/webp'].includes(idCard.type)) {
+                return NextResponse.json({ error: checked.reason || 'The uploaded image content is invalid.' }, { status: checked.status || 400 });
+            }
+            const uploadDir = process.env.PRIVATE_UPLOAD_DIR || join(process.cwd(), '.private-uploads');
+            await mkdir(uploadDir, { recursive: true, mode: 0o700 });
+            const storageId = randomUUID();
+            const extension = idCard.type === 'image/jpeg' ? 'jpg' : idCard.type === 'image/png' ? 'png' : 'webp';
+            storedPath = join(uploadDir, `${storageId}.${extension}`);
+            await writeFile(storedPath, buffer, { flag: 'wx', mode: 0o600 });
+            idCardPath = `private:${storageId}.${signature.ext}`;
         }
 
-        // Create user
-        const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                password: hashedPassword,
-                collegeName: collegeName || '',
-                collegeYear: collegeYear || '',
-                collegeIdNumber: collegeIdNumber || '',
-                idCardPath,
-                role: 'USER',
-                status: 'PENDING',
-            }
-        });
+        let user;
+        try {
+            user = await prisma.user.create({
+                data: {
+                    name,
+                    email,
+                    password: hashedPassword,
+                    collegeName: collegeName || '',
+                    collegeYear: collegeYear || '',
+                    collegeIdNumber: collegeIdNumber || '',
+                    idCardPath,
+                    role: 'USER',
+                    status: 'PENDING',
+                }
+            });
+        } catch (error) {
+            if (storedPath) await rm(storedPath, { force: true });
+            throw error;
+        }
 
         return NextResponse.json({ message: 'User created successfully', user: { id: user.id, email: user.email } });
     } catch (error) {
-        console.error('[Signup API Error]:', error);
+        console.error('[Signup API Error]', { name: error?.name, code: error?.code });
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

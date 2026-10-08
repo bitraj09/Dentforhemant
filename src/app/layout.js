@@ -6,8 +6,8 @@ import PWARegister from '@/components/PWARegister';
 import { DentalStateProvider } from '@/context/DentalStateContext';
 
 export const metadata = {
-  title: 'DENTEX Dental Studio — Dental Intelligence',
-  description: 'Analyze dental radiographs, explore anatomy, and learn with DENTEX Dental Studio.',
+  title: 'Dental AI Dental Studio — Dental Intelligence',
+  description: 'Analyze dental radiographs, explore anatomy, and learn with Dental AI Dental Studio.',
   keywords: ['dental AI', 'radiograph analysis', 'orthopantomogram', 'landmark detection', 'dental diagnosis', 'forensic odontology'],
   manifest: '/manifest.json',
 };

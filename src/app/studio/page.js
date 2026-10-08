@@ -58,7 +58,7 @@ export default function StudioOverviewPage() {
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div>
-          <p className={styles.eyebrow}>DENTEX Dental Studio</p>
+          <p className={styles.eyebrow}>Dental AI Dental Studio</p>
           <h1>{timeGreeting}{firstName ? `, ${firstName}` : ''}.</h1>
           <p className={styles.intro}>Analyze, learn, and explore with your dental workspace.</p>
         </div>

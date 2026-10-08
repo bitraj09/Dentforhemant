@@ -163,7 +163,7 @@ export default function Sidebar({
           <span className={styles.brandIcon}>
             <TbDental size={20} />
           </span>
-          {!collapsed && <span className={styles.brandText}>DENTEX</span>}
+          {!collapsed && <span className={styles.brandText}>Dental AI</span>}
         </Link>
         <button
           className={styles.collapseBtn}

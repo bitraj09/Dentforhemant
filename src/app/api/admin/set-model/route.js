@@ -2,12 +2,15 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
+import { requireAdmin } from '@/lib/auth-guard';
 
 /**
  * GET /api/admin/set-model
  * Returns the currently active AI model.
  */
 export async function GET() {
+    const { error } = await requireAdmin();
+    if (error) return error;
     try {
         const config = await prisma.systemConfig.findUnique({
             where: { key: 'activeModel' },
@@ -17,7 +20,8 @@ export async function GET() {
             activeModel: config?.value || 'GOOGLE_AI',
         });
     } catch (error) {
-        return NextResponse.json({ activeModel: 'GOOGLE_AI' });
+        console.error('[Set Model API] Failed to read active model', error);
+        return NextResponse.json({ error: 'Failed to read model configuration.' }, { status: 500 });
     }
 }
 

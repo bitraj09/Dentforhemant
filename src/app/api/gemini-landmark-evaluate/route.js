@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
+import { requireApprovedSession } from '@/lib/auth-guard';
+import { validateImageDataUrl } from '@/utils/image-validation';
+import { getGeminiApiKey } from '@/lib/llm-config';
 
 const EVALUATE_PROMPT = `You are an expert cephalometric and dental radiograph analyst and dental anatomy professor.
 
@@ -37,7 +40,9 @@ RULES:
 
 export async function POST(request) {
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const { error: authError } = await requireApprovedSession();
+        if (authError) return authError;
+        const apiKey = await getGeminiApiKey();
         if (!apiKey) {
             return NextResponse.json(
                 { error: 'GEMINI_API_KEY not configured' },
@@ -53,6 +58,9 @@ export async function POST(request) {
                 { status: 400 }
             );
         }
+        if (typeof image !== 'string' || image.length > 28_000_000) return NextResponse.json({ error: 'Image is too large or invalid.' }, { status: 413 });
+        const imageCheck = await validateImageDataUrl(image);
+        if (!imageCheck.ok) return NextResponse.json({ error: imageCheck.reason }, { status: imageCheck.status || 400 });
 
         const base64Match = image.match(/^data:image\/(\w+);base64,(.+)$/);
         if (!base64Match) {
@@ -111,7 +119,7 @@ export async function POST(request) {
         try {
             parsed = JSON.parse(jsonStr);
         } catch (e) {
-            console.warn('[Gemini Evaluate] Failed to parse JSON:', responseText.substring(0, 200));
+            console.warn('[Gemini Evaluate] Provider response was not valid JSON.');
             return NextResponse.json({
                 isCorrect: false,
                 accuracyScore: 0,
@@ -143,10 +151,10 @@ export async function POST(request) {
         });
 
     } catch (error) {
-        console.error('[Gemini Evaluate Error]', error);
+        console.error('[Gemini Evaluate Error]', { name: error?.name, status: error?.status });
         return NextResponse.json(
-            { error: `Gemini API error: ${error.message}` },
-            { status: 500 }
+            { error: 'AI evaluation is temporarily unavailable.' },
+            { status: 503 }
         );
     }
 }

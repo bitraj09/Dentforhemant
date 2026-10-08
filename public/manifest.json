@@ -1,6 +1,6 @@
 {
-    "name": "DentalAI",
-    "short_name": "DentalAI",
+    "name": "Dental AI",
+    "short_name": "Dental AI",
     "description": "AI-Powered Dental Radiograph Analysis — Landmarks, Diagnosis, Forensics, Education",
     "start_url": "/",
     "display": "standalone",

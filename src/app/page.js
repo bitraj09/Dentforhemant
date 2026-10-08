@@ -78,7 +78,7 @@ export default function Home() {
       </section>
 
       <section className={styles.whySection}>
-        <div className={styles.whyIntro}><span className={styles.sectionEyebrow}>Why DENTEX</span><h2>Designed for focused dental work.</h2></div>
+        <div className={styles.whyIntro}><span className={styles.sectionEyebrow}>Why Dental AI</span><h2>Designed for focused dental work.</h2></div>
         <div className={styles.whyPoints}>
           <p><strong>Clear review.</strong> Keep scans, findings, and supporting context together.</p>
           <p><strong>Useful learning.</strong> Move from reference material to active practice.</p>

@@ -169,6 +169,87 @@
     letter-spacing: 0.05em;
 }
 
+.llmKeySection {
+    margin-bottom: 40px;
+    padding: 24px 28px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+}
+
+.llmKeyHeading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.llmKeyHeading p,
+.llmKeyHint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.keyStatus {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border-radius: var(--radius-full);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.keyConfigured {
+    color: #15803d;
+    background: #dcfce7;
+}
+
+.llmKeyForm {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    margin-top: 20px;
+}
+
+.llmKeyForm label {
+    font-size: 0.85rem;
+    font-weight: 650;
+    color: var(--text-primary);
+}
+
+.llmKeyForm input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.llmKeyForm input:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+.llmKeyActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.llmKeyHint,
+.llmKeyMessage {
+    margin: 0;
+}
+
+.llmKeyMessage {
+    color: var(--primary);
+    font-size: 0.85rem;
+}
+
 /* ---- Users Section ---- */
 .usersSection {
     margin-bottom: 40px;

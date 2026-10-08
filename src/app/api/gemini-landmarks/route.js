@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
+import { requireApprovedSession } from '@/lib/auth-guard';
+import { validateImageDataUrl } from '@/utils/image-validation';
+import { getGeminiApiKey } from '@/lib/llm-config';
 
 const LANDMARK_PROMPT = `You are an expert cephalometric and dental radiograph analyst. Analyze this OPG (Orthopantomogram) panoramic X-ray image and identify anatomical landmarks with polygon contour outlines.
 
@@ -64,7 +67,9 @@ const CATEGORY_COLORS = {
 
 export async function POST(request) {
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const { error: authError } = await requireApprovedSession();
+        if (authError) return authError;
+        const apiKey = await getGeminiApiKey();
         if (!apiKey) {
             return NextResponse.json(
                 { error: 'GEMINI_API_KEY not configured' },
@@ -76,6 +81,9 @@ export async function POST(request) {
         if (!image) {
             return NextResponse.json({ error: 'No image provided' }, { status: 400 });
         }
+        if (typeof image !== 'string' || image.length > 28_000_000) return NextResponse.json({ error: 'Image is too large or invalid.' }, { status: 413 });
+        const imageCheck = await validateImageDataUrl(image);
+        if (!imageCheck.ok) return NextResponse.json({ error: imageCheck.reason }, { status: imageCheck.status || 400 });
 
         const base64Match = image.match(/^data:image\/(\w+);base64,(.+)$/);
         if (!base64Match) {
@@ -123,7 +131,7 @@ export async function POST(request) {
         try {
             parsed = JSON.parse(jsonStr);
         } catch (e) {
-            console.warn('[Gemini Landmarks] Failed to parse JSON, assuming invalid X-ray:', responseText.substring(0, 100));
+            console.warn('[Gemini Landmarks] Provider response was not valid JSON.');
             return NextResponse.json({ landmarks: [], summary: 'This image does not appear to be a valid OPG dental X-ray. It must be a panoramic dental radiograph.', isValidXray: false });
         }
 
@@ -175,8 +183,8 @@ export async function POST(request) {
         });
 
     } catch (error) {
-        console.error('[Gemini Landmarks Error]', error);
-        return NextResponse.json({ error: `Gemini API error: ${error.message}` }, { status: 500 });
+        console.error('[Gemini Landmarks Error]', { name: error?.name, status: error?.status });
+        return NextResponse.json({ error: 'AI analysis is temporarily unavailable.' }, { status: 503 });
     }
 }
 
