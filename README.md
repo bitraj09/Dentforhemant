@@ -181,24 +181,45 @@ For a production DigitalOcean deployment, use the hardened Compose overlay and d
 
 ### Option A: One-Command Docker Setup (Recommended)
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-username/dental-ai.git
-   cd dental-ai
-   ```
+Docker Compose includes development-only database credentials and creates a default administrator on first startup, so no `.env` setup is required. From the repository root, run:
 
-2. **Configure Environment Variables**:
-   ```bash
-   cp .env.docker.example .env
-   ```
+```bash
+docker compose up --build -d
+```
 
-3. **Launch Container Suite**:
-   ```bash
-   docker compose up -d --build
-   ```
+Docker builds the Next.js web app and Python ML service, starts MySQL, applies the Prisma migrations, and starts the app. The first build can take several minutes because it downloads the application dependencies and model runtime. Once the containers are healthy, open [http://localhost:3000](http://localhost:3000).
 
-4. **Access Application**:
-   Open browser at `http://localhost:3000`
+Default local login:
+
+- **Email:** `admin@gmai.com`
+- **Password:** `admin`
+
+The account is created only if it does not already exist. The Docker web port is bound to localhost. These known credentials are for local development only; do not expose this configuration to a network or use it in production. The production Compose overlay disables default-admin seeding. Set `SEED_DEFAULT_ADMIN=false` to disable it in another deployment, or override `DEFAULT_ADMIN_EMAIL` and `DEFAULT_ADMIN_PASSWORD` in `.env` before the first startup.
+
+Useful commands:
+
+```bash
+# Check service status
+docker compose ps
+
+# Follow logs from all services
+docker compose logs -f
+
+# Follow logs for one service
+docker compose logs -f web
+docker compose logs -f ml-service
+docker compose logs -f mysql
+
+# Stop containers; keep database and uploads
+docker compose down
+
+# Rebuild images and restart
+docker compose up --build -d
+```
+
+To completely reset local data, run `docker compose down -v`. This deletes the MySQL database and uploaded files stored in Docker volumes.
+
+The built-in credentials and signing keys are for local development only. For a public or shared deployment, set strong values in a local `.env` file or your deployment secret manager and use the production overlay and runbook in [docs/DEPLOYMENT_DIGITALOCEAN.md](docs/DEPLOYMENT_DIGITALOCEAN.md). Do not use the development defaults in production.
 
 ---
 

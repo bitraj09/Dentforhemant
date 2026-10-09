@@ -50,6 +50,7 @@ COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 COPY --from=builder /app/scripts/migrate-verification-uploads.mjs ./scripts/migrate-verification-uploads.js
+COPY --from=builder /app/scripts/seed-default-admin.js ./scripts/seed-default-admin.js
 
 RUN chmod +x ./scripts/docker-entrypoint.sh && chown -R nextjs:nodejs /app
 

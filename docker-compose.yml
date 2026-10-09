@@ -5,10 +5,12 @@ services:
     init: true
     command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
+      # Safe defaults make `docker compose up --build -d` work on a fresh clone.
+      # Override these values through the environment or a local .env for shared deployments.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-dental-local-root-password}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-dental}
       MYSQL_USER: ${MYSQL_USER:-dental}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dental-local-password}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -24,7 +26,7 @@ services:
     restart: unless-stopped
     init: true
     environment:
-      ML_API_KEY: ${ML_API_KEY:?set ML_API_KEY}
+      ML_API_KEY: ${ML_API_KEY:-dental-local-ml-key}
       CORS_ORIGINS: ${ALLOWED_ORIGINS:-}
     # Only expose internally within Docker network — not to host
     expose:
@@ -51,13 +53,16 @@ services:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
       ML_SERVICE_URL: http://ml-service:8001
-      ML_API_KEY: ${ML_API_KEY:?set ML_API_KEY}
-      DATABASE_URL: mysql://${MYSQL_USER:-dental}:${MYSQL_PASSWORD:?set MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-dental}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:?set NEXTAUTH_URL}
+      ML_API_KEY: ${ML_API_KEY:-dental-local-ml-key}
+      DATABASE_URL: mysql://${MYSQL_USER:-dental}:${MYSQL_PASSWORD:-dental-local-password}@mysql:3306/${MYSQL_DATABASE:-dental}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dental-local-nextauth-secret-change-for-deployment}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       PRIVATE_UPLOAD_DIR: /data/uploads
-      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-false}
+      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-true}
+      SEED_DEFAULT_ADMIN: ${SEED_DEFAULT_ADMIN:-true}
+      DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@gmai.com}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-admin}
     ports:
       - "127.0.0.1:3000:3000"
     volumes:

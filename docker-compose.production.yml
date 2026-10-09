@@ -5,6 +5,7 @@ services:
     environment:
       NODE_ENV: production
       RUN_DB_MIGRATIONS: "false"
+      SEED_DEFAULT_ADMIN: "false"
       PRIVATE_UPLOAD_DIR: /data/uploads
       NEXTAUTH_URL: ${NEXTAUTH_URL:?set NEXTAUTH_URL to the HTTPS site URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
