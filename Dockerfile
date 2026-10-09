@@ -52,7 +52,9 @@ COPY --from=builder /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoin
 COPY --from=builder /app/scripts/migrate-verification-uploads.mjs ./scripts/migrate-verification-uploads.js
 COPY --from=builder /app/scripts/seed-default-admin.js ./scripts/seed-default-admin.js
 
-RUN chmod +x ./scripts/docker-entrypoint.sh && chown -R nextjs:nodejs /app
+RUN sed -i 's/\r$//' ./scripts/docker-entrypoint.sh && \
+    chmod +x ./scripts/docker-entrypoint.sh && \
+    chown -R nextjs:nodejs /app
 
 USER nextjs
 
