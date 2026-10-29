@@ -2,6 +2,9 @@
 const nextConfig = {
   output: "standalone",
   allowedDevOrigins: ["*.ngrok-free.app"],
+  experimental: {
+    agentUpgrade: "security",
+  },
   async headers() {
     return [{
       source: "/:path*",
