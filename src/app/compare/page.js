@@ -5,7 +5,6 @@ import { FiColumns, FiZap, FiRefreshCw, FiAlertTriangle } from 'react-icons/fi';
 import ImageUploader from '@/components/ImageUploader';
 import SampleImages from '@/components/SampleImages';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { diagnoseConditions, simulateDelay, getImageSeed } from '@/utils/mockAI';
 import styles from './page.module.css';
 
 export default function ComparePage() {
@@ -16,6 +15,7 @@ export default function ComparePage() {
     const [isValidXrayA, setIsValidXrayA] = useState(true);
     const [isValidXrayB, setIsValidXrayB] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [analysisError, setAnalysisError] = useState('');
     const [imgSizeA, setImgSizeA] = useState({ w: 800, h: 400 });
     const [imgSizeB, setImgSizeB] = useState({ w: 800, h: 400 });
 
@@ -32,50 +32,34 @@ export default function ComparePage() {
     const handleCompare = async () => {
         if (!imageA || !imageB) return;
         setLoading(true);
+        setAnalysisError('');
 
-        // Helper: try Gemini, fallback to mock
-        const analyzeImage = async (img, imgSize) => {
-            try {
-                const res = await fetch('/api/gemini-diagnose', {
+        const analyzeImage = async (img) => {
+            const res = await fetch('/api/ml-diagnose', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: img, imageWidth: imgSize.w, imageHeight: imgSize.h }),
+                    body: JSON.stringify({ image: img }),
                 });
-                if (res.ok) {
-                    const data = await res.json();
-
-                    // If Gemini explicitly says it's not a valid OPG, don't fall back to mock
-                    if (data.isValidXray === false) {
-                        return { results: [], isValid: false };
-                    }
-
-                    if (data.findings && !data.error) {
-                        return { results: data.findings, isValid: true };
-                    }
-                }
-            } catch (err) {
-                console.warn('[Gemini Compare] Falling back:', err);
-            }
-            // Fallback
-            const seed = getImageSeed(img);
-            return { results: diagnoseConditions(imgSize.w, imgSize.h, seed), isValid: true };
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `Local model failed (HTTP ${res.status}).`);
+            if (data.isValidXray === false) return { results: [], isValid: false };
+            if (!Array.isArray(data.findings)) throw new Error(data.error || 'Local model returned no analysis.');
+            return { results: data.findings, isValid: true };
         };
 
-        const [resA, resB] = await Promise.all([
-            analyzeImage(imageA, imgSizeA),
-            analyzeImage(imageB, imgSizeB),
-        ]);
-
-        setResultsA(resA.results);
-        setIsValidXrayA(resA.isValid);
-        setResultsB(resB.results);
-        setIsValidXrayB(resB.isValid);
-        setLoading(false);
+        try {
+            const [resA, resB] = await Promise.all([analyzeImage(imageA), analyzeImage(imageB)]);
+            setResultsA(resA.results); setIsValidXrayA(resA.isValid);
+            setResultsB(resB.results); setIsValidXrayB(resB.isValid);
+        } catch (error) {
+            setAnalysisError(`${error.message} Check that the local ML service is running.`);
+        } finally { setLoading(false); }
     };
 
     const handleReset = () => {
         setImageA(null); setImageB(null);
         setResultsA(null); setResultsB(null);
+        setAnalysisError('');
     };
 
     const onLoadA = (e) => setImgSizeA({ w: e.target.naturalWidth || 800, h: e.target.naturalHeight || 400 });
@@ -103,6 +87,7 @@ export default function ComparePage() {
     return (
         <div className={styles.page}>
             <AnimatePresence>{loading && <LoadingOverlay message="Analyzing both images…" />}</AnimatePresence>
+            {analysisError && <div className={styles.errorAlert} role="alert"><FiAlertTriangle size={18} /> {analysisError}</div>}
 
             <div className="container">
                 <motion.div className={styles.header} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>

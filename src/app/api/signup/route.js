@@ -18,13 +18,16 @@ export async function POST(req) {
         const collegeIdNumber = formData.get('collegeIdNumber');
         const idCard = formData.get('idCard'); // This is a File object
 
-        if (!email || !password || !name) {
+        if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string' || !name.trim() || !email.trim() || !password ||
+            (collegeName != null && typeof collegeName !== 'string') || (collegeYear != null && typeof collegeYear !== 'string') ||
+            (collegeIdNumber != null && typeof collegeIdNumber !== 'string')) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
         // Email format validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        const normalizedEmail = email.trim().toLowerCase();
+        if (!emailRegex.test(normalizedEmail)) {
             return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
         }
 
@@ -43,11 +46,11 @@ export async function POST(req) {
 
         // Check if user exists before processing file upload
         const existingUser = await prisma.user.findUnique({
-            where: { email }
+            where: { email: normalizedEmail }
         });
 
         if (existingUser) {
-            return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+            return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 });
         }
 
         // Check for blocked college types
@@ -97,8 +100,8 @@ export async function POST(req) {
         try {
             user = await prisma.user.create({
                 data: {
-                    name,
-                    email,
+                    name: name.trim(),
+                    email: normalizedEmail,
                     password: hashedPassword,
                     collegeName: collegeName || '',
                     collegeYear: collegeYear || '',
@@ -109,13 +112,22 @@ export async function POST(req) {
                 }
             });
         } catch (error) {
-            if (storedPath) await rm(storedPath, { force: true });
+            if (storedPath) {
+                try {
+                    await rm(storedPath, { force: true });
+                } catch (cleanupError) {
+                    console.error('[Signup Upload Cleanup Error]', { name: cleanupError?.name });
+                }
+            }
+            if (error?.code === 'P2002') {
+                return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 });
+            }
             throw error;
         }
 
         return NextResponse.json({ message: 'User created successfully', user: { id: user.id, email: user.email } });
     } catch (error) {
-        console.error('[Signup API Error]', { name: error?.name, code: error?.code });
+        console.error('[Signup API Error]', { name: error?.name, code: error?.code, message: error?.code ? 'Database operation failed.' : 'Request processing failed.' });
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

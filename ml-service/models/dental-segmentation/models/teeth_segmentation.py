@@ -209,14 +209,14 @@ def collate_fn(batch):
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
-def build_model(num_classes):
+def build_model(num_classes, pretrained=True):
     """
     Build Mask R-CNN with ResNet50+FPN backbone.
     Loads COCO pretrained weights and replaces heads for num_classes.
     """
-    # Build without network weights; the complete trained checkpoint is loaded by the caller.
+    # Use COCO weights for training when requested; inference loads the complete trained checkpoint without downloading weights.
     model = maskrcnn_resnet50_fpn(
-        weights=None,
+        weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT if pretrained else None,
         weights_backbone=None,
         box_nms_thresh = NMS_THRESHOLD,
         box_score_thresh = CONF_THRESHOLD,

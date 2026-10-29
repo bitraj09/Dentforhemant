@@ -10,7 +10,16 @@ from functools import wraps
 import threading
 import cv2
 import numpy as np
+
+try:
+    ML_CPU_THREADS = max(1, int(os.getenv("ML_CPU_THREADS", os.getenv("OMP_NUM_THREADS", "2"))))
+except ValueError:
+    ML_CPU_THREADS = 2
+os.environ.setdefault("OMP_NUM_THREADS", str(ML_CPU_THREADS))
+os.environ.setdefault("MKL_NUM_THREADS", str(ML_CPU_THREADS))
+
 import torch
+torch.set_num_threads(ML_CPU_THREADS)
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -94,6 +103,7 @@ async def decode_upload(file: UploadFile) -> np.ndarray:
 
 # ─── Dental chat model ───────────────────────────────────────────────────────
 CHAT_MODEL_ID = os.getenv("CHAT_MODEL_ID", "Harisundar/PALL-Text")
+CHAT_MODEL_REVISION = os.getenv("CHAT_MODEL_REVISION", "9599cc64f7e7e14ddd639023f386f4623878e0d8")
 chat_tokenizer = None
 chat_model = None
 chat_model_error = None
@@ -114,10 +124,11 @@ def get_chat_model():
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
 
-            chat_tokenizer = AutoTokenizer.from_pretrained(CHAT_MODEL_ID)
+            chat_tokenizer = AutoTokenizer.from_pretrained(CHAT_MODEL_ID, revision=CHAT_MODEL_REVISION)
             dtype = torch.bfloat16 if not torch.cuda.is_available() or torch.cuda.is_bf16_supported() else torch.float16
             chat_model = AutoModelForCausalLM.from_pretrained(
                 CHAT_MODEL_ID,
+                revision=CHAT_MODEL_REVISION,
                 torch_dtype=dtype,
                 device_map="auto",
             )
@@ -338,6 +349,9 @@ def check_result_is_valid_opg(result) -> bool:
 def read_root():
     if diagnosis_model is None or landmark_model is None:
         return JSONResponse(status_code=503, content={"ok": False})
+    required_weights = ("toothpulpmask.pt", "maskrcnn_best.pth")
+    if any(not os.path.isfile(os.path.join(here, "models", weight)) for weight in required_weights):
+        return JSONResponse(status_code=503, content={"ok": False})
     return {"ok": True}
 
 # ─── Diagnosis endpoint ───────────────────────────────────────────────────────
@@ -533,6 +547,8 @@ async def analyze_forensics(file: UploadFile = File(...)):
         return results
     except HTTPException as error:
         return JSONResponse(status_code=error.status_code, content={"error": error.detail})
+    except ValueError as error:
+        return JSONResponse(status_code=422, content={"error": str(error)})
     except Exception:
         import logging
         logging.exception("Forensic inference failed")

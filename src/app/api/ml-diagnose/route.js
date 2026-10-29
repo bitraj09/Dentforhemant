@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { validateOpgImage } from '@/utils/validation';
 import { requireApprovedSession } from '@/lib/auth-guard';
 
 const ML_SERVICE_URL = (process.env.ML_SERVICE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '');
@@ -17,20 +16,11 @@ export async function POST(req) {
             return NextResponse.json({ error: 'Image is too large or invalid.' }, { status: 413 });
         }
 
-        // Validate if the image is a valid panoramic OPG dental radiograph
-        const validation = await validateOpgImage(image);
-        if (!validation.isValid) {
-            return NextResponse.json({
-                findings: [],
-                annotated_image: null,
-                summary: validation.reason || 'The uploaded image does not appear to be a valid OPG dental X-ray. Please upload a panoramic dental radiograph.',
-                isValidXray: false,
-                source: 'yolo',
-            }, { status: validation.status || 200 });
-        }
-
         // Convert base64 dataUrl to Blob
         const base64Data = image.split(',')[1];
+        if (!base64Data) {
+            return NextResponse.json({ error: 'Invalid image format' }, { status: 400 });
+        }
         const buffer = Buffer.from(base64Data, 'base64');
         const blob = new Blob([buffer], { type: 'image/jpeg' });
 
@@ -42,7 +32,7 @@ export async function POST(req) {
             method: 'POST',
             headers: { 'X-ML-API-Key': process.env.ML_API_KEY || '', 'X-Request-ID': req.headers.get('x-request-id') || '' },
             body: formData,
-            signal: AbortSignal.timeout(90_000),
+            signal: AbortSignal.timeout(30_000),
         });
 
         if (!mlRes.ok) {

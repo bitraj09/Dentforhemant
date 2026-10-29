@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { validateOpgImage } from '@/utils/validation';
 import { requireApprovedSession } from '@/lib/auth-guard';
 
 const ML_SERVICE_URL = (process.env.ML_SERVICE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '');
@@ -17,19 +16,11 @@ export async function POST(req) {
             return NextResponse.json({ error: 'Image is too large or invalid.' }, { status: 413 });
         }
 
-        // Validate if the image is a valid panoramic OPG dental radiograph
-        const validation = await validateOpgImage(image);
-        if (!validation.isValid) {
-            return NextResponse.json({
-                result: null,
-                summary: validation.reason || 'The uploaded image does not appear to be a valid OPG dental X-ray. Please upload a panoramic dental radiograph.',
-                isValidXray: false,
-                source: 'ml_pipeline',
-            }, { status: validation.status || 200 });
-        }
-
         // Convert base64 dataUrl to Blob
         const base64Data = image.split(',')[1];
+        if (!base64Data) {
+            return NextResponse.json({ error: 'Invalid image format' }, { status: 400 });
+        }
         const buffer = Buffer.from(base64Data, 'base64');
         const blob = new Blob([buffer], { type: 'image/jpeg' });
 
@@ -41,10 +32,14 @@ export async function POST(req) {
             method: 'POST',
             headers: { 'X-ML-API-Key': process.env.ML_API_KEY || '', 'X-Request-ID': req.headers.get('x-request-id') || '' },
             body: formData,
-            signal: AbortSignal.timeout(180_000),
+            signal: AbortSignal.timeout(60_000),
         });
 
         if (!mlRes.ok) {
+            if (mlRes.status === 422) {
+                const failure = await mlRes.json().catch(() => ({}));
+                return NextResponse.json({ error: failure.error || 'The forensic model could not produce an estimate from this image.' }, { status: 422 });
+            }
             throw new Error(`ML Service returned ${mlRes.status}`);
         }
 

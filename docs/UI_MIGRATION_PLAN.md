@@ -8,7 +8,7 @@
 - `src/styles/tokens.css` describes a light clinical UI but is not imported. `src/app/globals.css` independently defines a purple palette and dark theme. Page CSS modules also use legacy variable aliases.
 - App Router pages already exist for `/`, `/about`, `/login`, `/signup`, `/pending-approval`, `/diagnosis`, `/landmarks`, `/compare`, `/forensics`, `/tooth-chart`, `/learning`, `/education`, `/landmark-practice`, `/history`, `/admin`, and `/superadmin`. `/studio` and `/ai-assistant` do not exist.
 - Diagnosis and other workflows use existing API calls, shared `DentalStateContext`, image/report/3D components, and should retain their existing behavior and contracts.
-- Dependencies include NextAuth, Prisma, Gemini, Three.js/React Three Fiber, Fabric, Framer Motion, and React Icons. No UI framework is configured; CSS Modules are the established component styling pattern.
+- Dependencies include NextAuth, Prisma, Three.js/React Three Fiber, Fabric, Framer Motion, and React Icons. No UI framework is configured; CSS Modules are the established component styling pattern.
 - Local Next.js 16 App Router and CSS guidance was read from `node_modules/next/dist/docs/01-app/` before implementation.
 
 ## Incremental implementation
@@ -19,14 +19,14 @@
 4. **Overview:** add `/studio` as a focused workspace overview using existing routes and records where possible. Preserve all current route URLs.
 5. **Workflow surfaces:** update the existing diagnosis, landmarks, compare, forensics, tooth-chart, learning, education, landmark-practice, history, admin, superadmin, and auth pages incrementally, reusing their existing state, APIs, and specialized viewers.
 6. **Public experience:** update `/` and `/about` to the minimal DENTEX public identity. Do not use the particle component as the landing hero; leave the file intact.
-7. **Assistant:** the existing Gemini handlers accept radiograph-analysis requests and are not conversational. Add a separate authenticated `/api/assistant` route for text conversation; do not alter existing Gemini contracts. Let users explicitly attach the current diagnosis scan and pass diagnosis/lesson context when opening the assistant.
+7. **Assistant:** use the authenticated `/api/assistant` route for text conversation with the local ML service; pass diagnosis/lesson context when opening the assistant.
 8. **QA:** run the existing build and lint scripts after implementation milestones; preserve the existing ML models, APIs, authentication, Prisma schema, and page functionality.
 
 ## Progress
 
 - Completed the light-only DENTEX palette and compatibility layer, route-aware root composition, shell navigation refinements, protected `/studio` overview, landing page, About page, sign-in/sign-up/approval styling, and first-pass spacing/theme refinements across the existing workflow pages.
 - Removed user-facing model/provider labels from clinical and learning workflows while preserving model selection and API branching. Technical controls remain on privileged admin routes.
-- Added `/ai-assistant` and a separate rate-limited, authenticated Gemini conversation endpoint. Diagnosis summaries and lesson context can be passed into the conversation; attaching the current diagnosis scan is opt-in.
+- Added `/ai-assistant` and a separate rate-limited, authenticated local ML conversation endpoint. Diagnosis summaries and lesson context can be passed into the conversation.
 - Added `/studio`, `/ai-assistant`, and `/api/assistant` to the existing Next.js 16 Proxy matcher so workspace data and assistant requests require an approved session.
 - Final `npm.cmd run build` passes with the new `/studio`, `/ai-assistant`, and `/api/assistant` routes included.
 - Final `npm.cmd run lint` exits successfully with 0 errors and 32 warnings. Warnings include existing `<img>` and hook dependency findings, plus vendored `.venv` files.

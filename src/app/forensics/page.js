@@ -6,7 +6,6 @@ import ImageUploader from '@/components/ImageUploader';
 import SampleImages from '@/components/SampleImages';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import ReportGenerator from '@/components/ReportGenerator';
-import { estimateAge, simulateDelay, getImageSeed } from '@/utils/mockAI';
 import { useDentalState } from '@/context/DentalStateContext';
 import styles from './page.module.css';
 
@@ -32,6 +31,7 @@ export default function ForensicsPage() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [showReport, setShowReport] = useState(false);
+    const [analysisError, setAnalysisError] = useState('');
 
     const handleImage = useCallback((dataUrl) => {
         setForensicsImage(dataUrl);
@@ -44,114 +44,46 @@ export default function ForensicsPage() {
         }));
         setSaved(false);
         setPatientName('');
+        setAnalysisError('');
     }, [setForensicsImage, setForensicsState]);
 
     const handleAnalyze = async () => {
         if (!image) return;
         setLoading(true);
-
-        let estimation;
-        let source = 'ml_pipeline';
-
-        // 1. Try Python ML Service Forensic Pipeline (U-Net + Mask R-CNN)
+        setAnalysisError('');
+        let lastFailure = 'The forensic analysis service did not return a result.';
         try {
             const res = await fetch('/api/ml-forensics', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image }),
             });
-            if (res.ok) {
-                const data = await res.json();
-
-                if (data.isValidXray === false) {
-                    setAiSource('ml_pipeline');
-                    setResult(null);
-                    setSummary(data.summary || 'Please upload a valid OPG radiograph.');
-                    setIsValidXray(false);
-                    setLoading(false);
-                    return;
-                }
-
-                if (data.result && !data.error) {
-                    estimation = data.result;
-                    source = 'ml_pipeline';
-                    setSummary(data.summary || '');
-                    setIsValidXray(true);
-                }
-            }
-        } catch (err) {
-            console.warn('[ML Forensics Pipeline] Falling back to Gemini:', err);
-        }
-
-        // 2. Try Gemini API fallback
-        if (!estimation) {
-            try {
-                const res = await fetch('/api/gemini-forensics', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image }),
-                });
-                if (res.ok) {
-                    const data = await res.json();
-
-                    if (data.isValidXray === false) {
-                        setAiSource('gemini');
-                        setResult(null);
-                        setSummary(data.summary || 'Please upload a valid OPG radiograph.');
-                        setIsValidXray(false);
-                        setLoading(false);
-                        return;
-                    }
-
-                    if (data.result && !data.error) {
-                        estimation = data.result;
-                        source = 'gemini';
-                        setSummary(data.summary || '');
-                        setIsValidXray(true);
-                    }
-                }
-            } catch (err) {
-                console.warn('[Gemini Forensics] Falling back to mock AI:', err);
-            }
-        }
-
-        // 3. Fallback to mock AI
-        if (!estimation) {
-            await simulateDelay(2000);
-            const img = new Image();
-            img.src = image;
-            await new Promise((resolve) => {
-                img.onload = () => resolve();
-                img.onerror = () => resolve();
-            });
-            const aspectRatio = img.width / (img.height || 1);
-            if (aspectRatio < 1.5) {
-                setAiSource('mock');
+            const data = await res.json().catch(() => ({}));
+            if (data.isValidXray === false) {
+                setAiSource('ml_pipeline');
                 setResult(null);
-                setSummary('Unsupported image aspect ratio. The uploaded image does not appear to be a panoramic OPG dental radiograph.');
+                setSummary(data.summary || 'Please upload a valid OPG radiograph.');
                 setIsValidXray(false);
                 setLoading(false);
                 return;
             }
-            const seed = getImageSeed(image);
-            estimation = estimateAge(seed);
-            source = 'mock';
+            if (res.ok && data.result && !data.error) {
+                setAiSource('ml_pipeline');
+                setSummary(data.summary || '');
+                setIsValidXray(true);
+                setResult(data.result);
+                setHistory((prev) => [{ date: new Date(), estimatedAge: data.result.estimatedAge, range: `${data.result.minAge}–${data.result.maxAge}`, confidence: data.result.confidence, source: 'ml_pipeline' }, ...prev.slice(0, 9)]);
+                setSaved(false);
+                setLoading(false);
+                return;
+            }
+            lastFailure = data.error || data.message || `Forensic model request failed (HTTP ${res.status}).`;
+        } catch {
+            lastFailure = 'Could not reach the forensic analysis service.';
         }
 
-        setAiSource(source);
-        setResult(estimation);
+        setAnalysisError(`${lastFailure} No age estimate was generated.`);
         setLoading(false);
-        setHistory((prev) => [
-            {
-                date: new Date(),
-                estimatedAge: estimation.estimatedAge,
-                range: `${estimation.minAge}–${estimation.maxAge}`,
-                confidence: estimation.confidence,
-                source,
-            },
-            ...prev.slice(0, 9),
-        ]);
-        setSaved(false);
     };
 
     const handleSave = async () => {
@@ -253,6 +185,8 @@ export default function ForensicsPage() {
                         <div className={styles.previewSmall}>
                             <img src={image} alt="Radiograph" />
                         </div>
+                        {summary && !isValidXray && <p role="alert" className={styles.errorText}>{summary}</p>}
+                        {analysisError && <p role="alert" className={styles.errorText}>{analysisError}</p>}
                         <div className={styles.analyzeActions}>
                             <button className="btn btn-primary" onClick={handleAnalyze} disabled={loading}>
                                 <FiActivity size={18} /> Estimate Age

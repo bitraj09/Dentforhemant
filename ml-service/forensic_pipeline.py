@@ -100,7 +100,9 @@ def load_forensic_models():
         if os.path.exists(MRCNN_WEIGHTS_PATH):
             print(f"[Forensics] Loading Mask R-CNN model from {MRCNN_WEIGHTS_PATH}...")
             num_classes = 2 if MRCNN_BINARY else 36
-            model = build_maskrcnn_model(num_classes)
+            # The complete fine-tuned checkpoint is loaded below; COCO weights are
+            # unnecessary at inference and can trigger a network/cache write.
+            model = build_maskrcnn_model(num_classes, pretrained=False)
             checkpoint = torch.load(MRCNN_WEIGHTS_PATH, map_location=_device, weights_only=True)
             model.load_state_dict(checkpoint, strict=True)
             model.to(_device)
@@ -146,18 +148,18 @@ def calculate_cameriere_age(measurements: dict[str, dict]) -> dict[str, Any]:
             calc_age = per_tooth_formulas[fdi](ratio)
             tooth_ages[fdi] = max(14.0, min(85.0, calc_age))
 
+    if not ratios:
+        raise ValueError("No target canine teeth were detected; age cannot be estimated from this image.")
     if ratios:
         s_mean = float(np.mean(ratios))
         # Standard Cameriere overall canine equation
         estimated_age = 89.9 - 512.6 * s_mean
         estimated_age = max(14.0, min(85.0, estimated_age))
-    else:
-        estimated_age = 30.0
 
     # Cameriere SEE (Standard Error of Estimate) is approx ± 3.8 to 4.5 years
     min_age = max(12, round(estimated_age - 4.2))
     max_age = min(88, round(estimated_age + 4.2))
-    confidence = 0.88 if len(ratios) >= 2 else (0.75 if len(ratios) == 1 else 0.60)
+    confidence = 0.88 if len(ratios) >= 2 else 0.75
 
     return {
         "estimatedAge": round(estimated_age, 1),
@@ -289,10 +291,14 @@ def run_forensic_pipeline(image_bgr: np.ndarray) -> dict[str, Any]:
 
         fdi_mask = fdi_detections[fdi]["mask"]
         tooth_pixels = int(fdi_mask.sum())
+        if tooth_pixels <= 0:
+            continue
 
         # Intersection of Mask R-CNN FDI tooth & U-Net full pulp mask
         fdi_pulp_mask = fdi_mask & pulp_mask_full
         pulp_pixels = int(fdi_pulp_mask.sum())
+        if pulp_pixels <= 0:
+            continue
 
         ratio = pulp_pixels / tooth_pixels if tooth_pixels > 0 else 0.0
         ratio_percent = ratio * 100.0
@@ -394,17 +400,6 @@ def run_forensic_pipeline(image_bgr: np.ndarray) -> dict[str, Any]:
         }
         for fdi, data in age_measurements.items()
     ]
-
-    if not parameters:
-        parameters.append({
-            "id": "general_pulp",
-            "name": "General Pulp Narrowing",
-            "description": "Secondary dentin deposition across visible pulp cavities",
-            "weight": 1.0,
-            "finding": "Diffused pulp canal visibility; automated canine identification restricted by image contrast",
-            "ageRange": f"{age_info['minAge']}–{age_info['maxAge']} years",
-            "confidence": 0.70,
-        })
 
     return {
         "isValidXray": True,

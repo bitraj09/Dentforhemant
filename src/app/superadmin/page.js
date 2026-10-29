@@ -3,12 +3,10 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FiSliders, FiUsers, FiUserPlus, FiTrash2, FiShield, FiCpu, FiZap, FiBox } from 'react-icons/fi';
+import { FiSliders, FiUsers, FiUserPlus, FiTrash2, FiShield, FiBox } from 'react-icons/fi';
 import styles from './page.module.css';
 
 const MODEL_OPTIONS = [
-    { id: 'GOOGLE_AI', label: 'Google AI (Gemini)', icon: <FiZap size={20} />, color: '#6366f1', desc: 'Real Google Gemini API — production quality' },
-    { id: 'MOCK_AI', label: 'Mock AI', icon: <FiCpu size={20} />, color: '#f59e0b', desc: 'Fake/demo responses for testing' },
     { id: 'OWN_AI', label: 'Own AI (Custom)', icon: <FiBox size={20} />, color: '#22c55e', desc: 'Custom trained dental model' },
 ];
 
@@ -29,7 +27,7 @@ export default function SuperAdminPage() {
     const [loading, setLoading] = useState(true);
     const [blockedColleges, setBlockedColleges] = useState([]);
     const [newBlockedCollege, setNewBlockedCollege] = useState('');
-    const [activeModel, setActiveModel] = useState('GOOGLE_AI');
+    const [activeModel, setActiveModel] = useState('OWN_AI');
     const [modelLoading, setModelLoading] = useState(false);
 
     const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'USER', collegeName: '' });
@@ -56,7 +54,7 @@ export default function SuperAdminPage() {
                 if (data.config['BLOCKED_COLLEGES']) {
                     setBlockedColleges(data.config['BLOCKED_COLLEGES'].split(',').map(s => s.trim()).filter(Boolean));
                 }
-                if (data.config['activeModel']) setActiveModel(data.config['activeModel']);
+                if (data.config['activeModel']) setActiveModel('OWN_AI');
             }
         } catch (err) {
             console.error(err);
@@ -207,7 +205,7 @@ export default function SuperAdminPage() {
                     transition={{ delay: 0.1 }}
                 >
                     <h2 className={styles.sectionTitle}>
-                        <FiCpu size={20} /> AI Model Control
+                        <FiBox size={20} /> AI Model Control
                     </h2>
                     <div className={styles.modelGrid}>
                         {MODEL_OPTIONS.map((model) => (

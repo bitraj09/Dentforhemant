@@ -20,7 +20,7 @@ const TIME_OPTIONS = [
 export default function EducationPage() {
     const [image, setImage] = useState(null);
     const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
-    const [configuredModel, setConfiguredModel] = useState('GOOGLE_AI');
+    const [configuredModel, setConfiguredModel] = useState('OWN_AI');
     const [quizState, setQuizState] = useState('idle'); // idle, playing, answered, finished
     const [question, setQuestion] = useState(null);
     const [score, setScore] = useState(0);
@@ -28,6 +28,7 @@ export default function EducationPage() {
     const [answered, setAnswered] = useState(null); // selected option id
     const [usedIds, setUsedIds] = useState([]);
     const [history, setHistory] = useState([]);
+    const [workflowError, setWorkflowError] = useState('');
     const [detectedLandmarks, setDetectedLandmarks] = useState([]);
     const [timeLeft, setTimeLeft] = useState(30);
     const [selectedTime, setSelectedTime] = useState(30);
@@ -51,10 +52,12 @@ export default function EducationPage() {
 
     const matchLandmark = (detection) => {
         const detectionName = normalizeName(detection?.name || detection?.id || '');
+        const aliases = { lowerborder: 'inferiorbordermandible', gonialangle: 'angleofmandiblegonion', condylarhead: 'mandibularcondyle' };
+        const mappedName = aliases[detectionName] || detectionName;
         return landmarks.find((landmark) => {
             const landmarkName = normalizeName(landmark.name);
             const landmarkId = normalizeName(landmark.id);
-            return detectionName === landmarkName || detectionName === landmarkId;
+            return mappedName === landmarkName || mappedName === landmarkId;
         }) || null;
     };
 
@@ -67,8 +70,8 @@ export default function EducationPage() {
                     body: JSON.stringify({ image, imageWidth: imgSize.w, imageHeight: imgSize.h }),
                 });
 
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    const data = await res.json();
                     const matched = (data.landmarks || [])
                         .map(matchLandmark)
                         .filter((landmark) => landmark && !excludeIds.includes(landmark.id));
@@ -91,8 +94,10 @@ export default function EducationPage() {
         setQuestionNum(1);
         setUsedIds([]);
         setHistory([]);
+        setDetectedLandmarks([]);
         setAnswered(null);
         setQuizState('loading');
+        setWorkflowError('');
         setTimeLeft(selectedTime);
 
         // If custom model active, try to get full detection list to make a sequential quiz
@@ -107,30 +112,37 @@ export default function EducationPage() {
                 if (res.ok) {
                     const data = await res.json();
                     // Keep both detection + matched landmark so we can show the exact detection polygon
-                    const matched = (data.landmarks || [])
-                        .map((d) => {
-                            const lm = matchLandmark(d);
-                            if (!lm) return null;
-
-                            const polyPixels = d.polygon || [];
-                            const polyPct = polyPixels.map(p => [ (p.x || p[0]) / (imgSize.w || 1), (p.y || p[1]) / (imgSize.h || 1) ]);
-                            const cx = polyPct.length ? polyPct.reduce((s,p)=>s+p[0],0)/polyPct.length : (lm.typicalPosition?.xPercent||0.5);
-                            const cy = polyPct.length ? polyPct.reduce((s,p)=>s+p[1],0)/polyPct.length : (lm.typicalPosition?.yPercent||0.5);
-
-                            const lmModified = { ...lm, typicalPolygon: polyPct.length ? polyPct : lm.typicalPolygon, typicalPosition: { xPercent: cx, yPercent: cy } };
-
-                            return { detection: d, landmark: lmModified };
-                        })
-                        .filter(Boolean);
+                    const matched = (data.landmarks || []).map((d) => {
+                        const rawPolygon = d.polygon || [];
+                        const looksLikePercent = rawPolygon.length > 0 && rawPolygon.every((p) => {
+                            const x = Array.isArray(p) ? p[0] : p.x;
+                            const y = Array.isArray(p) ? p[1] : p.y;
+                            return x >= 0 && x <= 1 && y >= 0 && y <= 1;
+                        });
+                        const polyPct = rawPolygon.map((p) => {
+                            const x = Array.isArray(p) ? p[0] : p.x;
+                            const y = Array.isArray(p) ? p[1] : p.y;
+                            return [looksLikePercent ? x : x / (imgSize.w || 1), looksLikePercent ? y : y / (imgSize.h || 1)];
+                        }).filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+                        if (polyPct.length < 3) return null;
+                        const lm = matchLandmark(d) || {
+                            id: `model_${normalizeName(d.name || d.id || 'landmark')}`,
+                            name: d.name || d.id || 'Detected landmark',
+                            description: 'Landmark detected by the configured local model.',
+                            category: 'other',
+                            instanceColor: '#a855f7',
+                        };
+                        const cx = polyPct.reduce((s, p) => s + p[0], 0) / polyPct.length;
+                        const cy = polyPct.reduce((s, p) => s + p[1], 0) / polyPct.length;
+                        return { detection: d, landmark: { ...lm, typicalPolygon: polyPct, typicalPosition: { xPercent: cx, yPercent: cy } } };
+                    }).filter(Boolean);
 
                     if (matched.length > 0) {
                         // Build a target that uses the detection polygon (converted to percent coords)
                         const first = matched[0];
-                        const det = first.detection;
                         const lm = { ...first.landmark };
                         // detection polygon may be array of {x,y} in pixels
-                        const polyPixels = det.polygon || det.polygon || [];
-                        const polyPct = polyPixels.map(p => [ (p.x || p[0]) / imgSize.w, (p.y || p[1]) / imgSize.h ]);
+                        const polyPct = lm.typicalPolygon;
                         // centroid
                         const cx = polyPct.length ? polyPct.reduce((s,p)=>s+p[0],0)/polyPct.length : (lm.typicalPosition?.xPercent||0.5);
                         const cy = polyPct.length ? polyPct.reduce((s,p)=>s+p[1],0)/polyPct.length : (lm.typicalPosition?.yPercent||0.5);
@@ -144,10 +156,15 @@ export default function EducationPage() {
                         setQuizState('playing');
                         return;
                     }
+                    setWorkflowError(data.error || 'The local landmark model returned no usable detections for this image.');
+                } else {
+                    setWorkflowError(data.error || `Landmark model request failed (HTTP ${res.status}).`);
                 }
-            } catch (e) {
-                console.warn('Failed to fetch landmarks for quiz, falling back to random questions', e);
+            } catch {
+                setWorkflowError('Could not reach the local landmark model. No quiz was started.');
             }
+            setQuizState('idle');
+            return;
         }
 
         // Fallback: random questions
@@ -249,7 +266,7 @@ export default function EducationPage() {
                 >
                     <h1 className="section-title">Student Education</h1>
                     <p className="section-subtitle">
-                        Test your knowledge — identify dental landmarks on radiographs and get instant AI feedback.
+                        Practice identifying landmarks from a curated question bank, or use detected landmarks when the local model is selected.
                     </p>
                 </motion.div>
 
@@ -325,6 +342,7 @@ export default function EducationPage() {
                 ) : (
                     /* Quiz interface */
                     <div className={styles.quizLayout}>
+                        {workflowError && <p role="alert" className={styles.workflowError}>{workflowError}</p>}
                         <div className={styles.quizImage}>
                             <div className={styles.quizToolbar}>
                                 {quizState === 'idle' ? (

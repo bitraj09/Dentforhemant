@@ -1,7 +1,24 @@
 # Production overlay. Start with:
 # docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
 services:
+  mysql:
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?set MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER:?set MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+
   web:
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
     environment:
       NODE_ENV: production
       RUN_DB_MIGRATIONS: "false"
@@ -11,8 +28,16 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
       ML_API_KEY: ${ML_API_KEY:?set ML_API_KEY}
       ML_SERVICE_URL: http://ml-service:8001
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
 
   ml-service:
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
     environment:
       ML_API_KEY: ${ML_API_KEY:?set ML_API_KEY}
       CORS_ORIGINS: ${ALLOWED_ORIGINS:?set ALLOWED_ORIGINS}
+      ML_CPU_THREADS: ${ML_CPU_THREADS:-2}
+      CHAT_MODEL_REVISION: ${CHAT_MODEL_REVISION:-9599cc64f7e7e14ddd639023f386f4623878e0d8}

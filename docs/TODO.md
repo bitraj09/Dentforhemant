@@ -30,7 +30,7 @@
 
 ### 🤖 AI Model Switcher ✅
 - [x] **DB mein `activeModel` setting** — ✅ SystemConfig table stores activeModel
-- [x] **Admin Dashboard pe Model Selector UI** — ✅ Three cards: Google AI, Mock AI, Own AI
+- [x] **Admin Dashboard pe Model Selector UI** — Mock AI and Own AI options
 - [x] **Active model highlight** — ✅ Active card has glow effect + "Active" badge
 - [x] **API Route** — ✅ `/api/admin/set-model` GET/POST
 - [ ] **AI Router** — Connect `/api/analyze` to read activeModel and route accordingly
@@ -60,7 +60,7 @@
 
 ## 🤖 AI Features
 - [ ] **TensorFlow Model** — MobileNet ko dental-specific custom model se replace karo (better accuracy)
-- [ ] **Gemini Prompt** — X-ray findings se better patient summary generate karne ka prompt improve karo
+- [ ] **Local AI Prompt** — X-ray findings se better patient summary generate karne ka prompt improve karo
 - [ ] **AI Loading State** — Better loading UI jab AI inference chal raha ho (`LoadingOverlay.jsx`)
 - [ ] **Offline AI** — TF model ko PWA cache mein store karo taaki offline bhi kaam kare
 

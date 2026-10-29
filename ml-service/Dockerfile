@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV HOME=/home/appuser
+ENV TORCH_HOME=/home/appuser/.cache/torch
+ENV HF_HOME=/home/appuser/.cache/huggingface
 
 WORKDIR /app
 
@@ -22,8 +25,9 @@ RUN python -m pip install --no-cache-dir \
 
 COPY . ./
 
-RUN groupadd -r appuser && useradd -r -g appuser appuser \
-    && chown -R appuser:appuser /app
+RUN groupadd -r appuser && useradd --system --create-home --home-dir /home/appuser -g appuser appuser \
+    && mkdir -p /home/appuser/.cache/torch /home/appuser/.cache/huggingface \
+    && chown -R appuser:appuser /app /home/appuser
 
 USER appuser
 

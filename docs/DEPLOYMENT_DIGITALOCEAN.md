@@ -4,10 +4,10 @@ This procedure targets Ubuntu 24.04 LTS, Docker Compose, host Nginx, and the rep
 
 ## Server sizing
 
-The repository contains about 0.87 GiB of model weight files. YOLO weights are loaded when the ML service starts; U-Net and Mask R-CNN weights are loaded on the first forensic request and retained in memory. The PALL-Text chat model is fetched from Hugging Face on the first local-chat request and its exact model size/revision is not pinned here. Those facts do not establish reliable peak RAM or inference latency.
+The repository contains about 0.87 GiB of vision model weight files. YOLO weights are loaded when the ML service starts; U-Net and Mask R-CNN weights are loaded on the first forensic request and retained in memory. PALL-Text is an 8B-parameter BF16 model fetched on the first local-chat request ([model card](https://huggingface.co/Harisundar/PALL-Text)); the app pins a Hugging Face revision in Compose. These facts do not establish reliable peak RAM or inference latency.
 
-- **Minimum for a limited pilot:** 4 vCPU, 8 GiB RAM, 80 GiB SSD. Disable neither model features nor chat automatically; first measure model load and inference on this size. Do not treat this as a validated capacity.
-- **Recommended starting point:** 8 vCPU, 16 GiB RAM, 160 GiB SSD. Keep inference concurrency at one and monitor memory, disk, swap, and latency before increasing traffic.
+- **Minimum for a limited pilot with local chat enabled:** 8 vCPU, 32 GiB RAM, 160 GiB SSD. Measure model load and inference before accepting real users; this is not a validated capacity.
+- **Recommended starting point:** 16 vCPU, 64 GiB RAM, 200 GiB SSD. Keep inference concurrency at one and monitor memory, disk, swap, and latency before increasing traffic.
 - Ubuntu 24.04 LTS, Docker Engine and Compose plugin. Add 4 GiB swap as an emergency buffer, not as a substitute for RAM.
 - No GPU is explicitly required by the current code. PyTorch selects CUDA when it is available and otherwise runs on CPU. CPU inference can be slow; benchmark all enabled model paths before opening public access.
 
@@ -77,9 +77,9 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-Edit `.env` with `nano .env`. Use different random hex values for `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`, `NEXTAUTH_SECRET`, and `ML_API_KEY`; hex avoids URL-escaping ambiguity in `DATABASE_URL`. Generate values with `openssl rand -hex 32` and paste them into the file. Set `NEXTAUTH_URL=https://YOUR_DOMAIN`, `ALLOWED_ORIGINS=https://YOUR_DOMAIN`, and the internal service URL `ML_SERVICE_URL=http://ml-service:8001`. Set `GEMINI_API_KEY` only if Gemini-backed features are enabled. Do not put secrets in Git, Compose files, or build arguments.
+Edit `.env` with `nano .env`. Use different random hex values for `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`, `NEXTAUTH_SECRET`, and `ML_API_KEY`; hex avoids URL-escaping ambiguity in `DATABASE_URL`. Generate values with `openssl rand -hex 32` and paste them into the file. Set `NEXTAUTH_URL=https://YOUR_DOMAIN`, `ALLOWED_ORIGINS=https://YOUR_DOMAIN`, and the internal service URL `ML_SERVICE_URL=http://ml-service:8001`. The app uses its local ML service and needs no hosted LLM API key. Do not put secrets in Git, Compose files, or build arguments.
 
-The Gemini routes send the submitted radiograph image to Google Gemini when those features are selected. The assistant sends its text and optional image attachment to Gemini when Gemini is selected. The local PALL-Text assistant receives user text/context only. Review the provider's current data terms and obtain any required patient consent before using identifiable patient images.
+Radiograph analysis and assistant requests are sent to the self-hosted ML service. The assistant sends text and optional study context only; it does not accept image attachments. Apply the same access controls and patient data handling policy to the local ML service as the web application.
 
 Validate that Compose resolves required variables without printing their values:
 
@@ -227,7 +227,7 @@ Do not restore an SQL dump into a non-empty database without a recovery plan. Ve
 ## Operational items still requiring measurement
 
 - Benchmark diagnosis, landmarks, forensics, and PALL-Text on the chosen Droplet; watch `docker stats` and disk/swap usage. The application currently serializes heavy ML requests and returns 503 while the inference slot is busy.
-- PALL-Text is downloaded on first use from a mutable Hugging Face model reference. Pin an approved revision and pre-cache it only after verifying its license, size, and RAM requirement.
+- Preload PALL-Text with the pinned revision before opening public access. Verify its Llama 3.1 license terms, download size, and peak RAM on the chosen Droplet.
 - Configure off-host backup credentials and test automated rotation/retention. No backup automation or alerting service is configured in this repository.
-- Review Gemini provider terms, consent, and retention rules for patient data before enabling Gemini-backed clinical flows.
+- Review consent, access control, and retention rules for patient data processed by the self-hosted ML service.
 - The current Docker and Python dependency versions are not fully pinned, and this repo does not include a TypeScript compiler or TS files; JavaScript lint/build and existing Python tests are the relevant checks here.

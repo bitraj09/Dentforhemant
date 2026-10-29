@@ -5,7 +5,6 @@ import { FiZap, FiList, FiEye, FiEyeOff, FiAlertTriangle, FiSave, FiTag, FiLayer
 import ImageUploader from '@/components/ImageUploader';
 import SampleImages from '@/components/SampleImages';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { detectLandmarks, simulateDelay, getImageSeed } from '@/utils/mockAI';
 import { landmarkCategories } from '@/data/landmarkData';
 import { useDentalState } from '@/context/DentalStateContext';
 import styles from './page.module.css';
@@ -97,7 +96,7 @@ export default function LandmarksPage() {
         setLoading(true);
 
         let detected;
-        let source = 'mock';
+        let source = 'yolo';
 
         // ── 1. Try YOLO landmark model (denatlyolo.pt) first ─────────────────
         try {
@@ -123,72 +122,23 @@ export default function LandmarksPage() {
                     setIsValidXray(true);
                     console.log('[YOLO Landmarks] Success:', data.landmarks.length, 'structures');
                 } else {
-                    console.warn('[YOLO Landmarks] No detections, falling back to Gemini.');
+                    console.warn('[YOLO Landmarks] No detections returned.');
                 }
             } else {
                 const err = await res.json().catch(() => ({}));
                 console.warn('[YOLO Landmarks] Service error:', err.error || res.status);
             }
         } catch (err) {
-            console.warn('[YOLO Landmarks] Not reachable, falling back to Gemini:', err.message);
+            console.warn('[YOLO Landmarks] Not reachable:', err.message);
         }
 
-        // ── 2. Fallback: Gemini API ───────────────────────────────────────────
         if (!detected) {
-            try {
-                const res = await fetch('/api/gemini-landmarks', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image, imageWidth: imgSize.w, imageHeight: imgSize.h }),
-                });
-                if (res.ok) {
-                    const data = await res.json();
-
-                    if (data.isValidXray === false) {
-                        setAiSource('gemini');
-                        setResults([]);
-                        setSummary(data.summary || 'Please upload a valid OPG radiograph.');
-                        setIsValidXray(false);
-                        setLoading(false);
-                        return;
-                    }
-
-                    if (data.landmarks && data.landmarks.length > 0 && !data.error) {
-                        detected = data.landmarks;
-                        source = 'gemini';
-                        setSummary(data.summary || '');
-                        setIsValidXray(true);
-                    }
-                }
-            } catch (err) {
-                console.warn('[Gemini Landmarks] Falling back to mock:', err);
-            }
-        }
-
-        // ── 3. Final fallback: mock AI ────────────────────────────────────────
-        if (!detected) {
-            await simulateDelay(2200);
-            let w = imgSize.w;
-            let h = imgSize.h;
-            if (w === 0) {
-                const img = new Image();
-                img.src = image;
-                await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-                w = img.width;
-                h = img.height;
-            }
-            const aspectRatio = w / (h || 1);
-            if (aspectRatio < 1.5) {
-                setAiSource('mock');
-                setResults([]);
-                setSummary('Unsupported image aspect ratio. The uploaded image does not appear to be a panoramic OPG dental radiograph.');
-                setIsValidXray(false);
-                setLoading(false);
-                return;
-            }
-            const seed = getImageSeed(image);
-            detected = detectLandmarks(w, h, seed);
-            source = 'mock';
+            setAiSource('yolo');
+            setResults([]);
+            setSummary('The local landmark model returned no detections. Check that the ML service is running and that its landmark weights are installed, then try again.');
+            setIsValidXray(true);
+            setLoading(false);
+            return;
         }
 
         setAiSource(source);

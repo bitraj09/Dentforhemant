@@ -8,7 +8,6 @@ import SampleImages from '@/components/SampleImages';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import ResultsPanel from '@/components/ResultsPanel';
 import ReportGenerator from '@/components/ReportGenerator';
-import { diagnoseConditions, simulateDelay, getImageSeed } from '@/utils/mockAI';
 import { useDentalState } from '@/context/DentalStateContext';
 import styles from './page.module.css';
 
@@ -43,7 +42,7 @@ export default function DiagnosisPage() {
     const [useAI, setUseAI] = useState(true);
     const [history, setHistory] = useState([]);
     const [patientName, setPatientName] = useState('');
-    const [configuredModel, setConfiguredModel] = useState('GOOGLE_AI');
+    const [configuredModel, setConfiguredModel] = useState('OWN_AI');
     const imgRef = useRef(null);
     const [imageScale, setImageScale] = useState({ sx: 1, sy: 1 });
 
@@ -52,7 +51,7 @@ export default function DiagnosisPage() {
         fetch('/api/config/model')
             .then(res => res.json())
             .then(data => {
-                if (data.activeModel) setConfiguredModel(data.activeModel);
+                if (data.activeModel) setConfiguredModel('OWN_AI');
             })
             .catch(err => console.error("Failed to fetch model config", err));
     }, []);
@@ -104,35 +103,12 @@ export default function DiagnosisPage() {
                         localSummary = `Detected ${results.length} condition(s) using Custom AI model.`;
                     } else if (data.error) {
                         throw new Error(`Custom model error: ${data.error}`);
+                    } else {
+                        throw new Error('The local model returned no diagnosis results.');
                     }
                 } else {
                     const errText = await res.text().catch(() => '');
                     throw new Error(`Custom ML service returned ${res.status}. Make sure the FastAPI server is running on port 8001. ${errText}`);
-                }
-            } else if (configuredModel === 'GOOGLE_AI') {
-                // Attempt Gemini API
-                const res = await fetch('/api/gemini-diagnose', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image, imageWidth: imgSize.w, imageHeight: imgSize.h }),
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.isValidXray === false) {
-                        setAiSource('GOOGLE_AI');
-                        setFindings([]);
-                        setSummary(data.summary || 'Please upload a valid OPG radiograph.');
-                        setIsValidXray(false);
-                        setLoading(false);
-                        return; // Stop here
-                    }
-                    if (data.findings && !data.error) {
-                        results = data.findings;
-                        setIsValidXray(true);
-                        source = 'GOOGLE_AI';
-                        localSummary = data.summary || '';
-                    }
                 }
             }
         } catch (err) {
@@ -146,34 +122,6 @@ export default function DiagnosisPage() {
             }
         }
 
-        // Fallback or explicit Mock AI
-        if (!results || configuredModel === 'MOCK_AI') {
-            if (configuredModel !== 'MOCK_AI') console.log(`Falling back from ${configuredModel} to Mock AI...`);
-            await simulateDelay(1500);
-            let w = imgSize.w;
-            let h = imgSize.h;
-            if (w === 0) {
-                const img = new Image();
-                img.src = image;
-                await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-                w = img.width;
-                h = img.height;
-            }
-            const aspectRatio = w / (h || 1);
-            if (aspectRatio < 1.5) {
-                setAiSource('MOCK_AI');
-                setFindings([]);
-                setSummary('Unsupported image aspect ratio. The uploaded image does not appear to be a panoramic OPG dental radiograph.');
-                setIsValidXray(false);
-                setLoading(false);
-                return;
-            }
-            const seed = getImageSeed(image);
-            results = diagnoseConditions(w, h, seed);
-            source = 'MOCK_AI';
-            localSummary = configuredModel === 'MOCK_AI' ? 'Simulated response from Mock AI.' : 'Fallback: Simulated response.';
-        }
-        
         setAiSource(source);
         setSummary(localSummary);
         setFindings(results);

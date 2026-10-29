@@ -47,8 +47,8 @@ server {
         proxy_set_header X-Request-ID $request_id;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_read_timeout 240s;
-        proxy_send_timeout 240s;
+        proxy_read_timeout 420s;
+        proxy_send_timeout 420s;
     }
 
     location / {
@@ -61,6 +61,6 @@ server {
         proxy_set_header X-Request-ID $request_id;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_read_timeout 240s;
+        proxy_read_timeout 420s;
     }
 }

@@ -30,11 +30,14 @@ services:
     environment:
       ML_API_KEY: ${ML_API_KEY:-dental-local-ml-key}
       CORS_ORIGINS: ${ALLOWED_ORIGINS:-}
+      CHAT_MODEL_REVISION: ${CHAT_MODEL_REVISION:-9599cc64f7e7e14ddd639023f386f4623878e0d8}
     # The loopback mapping also lets a host-run `npm run dev` reach the model service.
     ports:
       - "127.0.0.1:8001:8001"
     expose:
       - "8001"
+    volumes:
+      - huggingface_cache:/home/appuser/.cache/huggingface
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/').read()"]
       interval: 30s
@@ -61,7 +64,6 @@ services:
       DATABASE_URL: mysql://${MYSQL_USER:-dental}:${MYSQL_PASSWORD:-dental-local-password}@mysql:3306/${MYSQL_DATABASE:-dental}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dental-local-nextauth-secret-change-for-deployment}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       PRIVATE_UPLOAD_DIR: /data/uploads
       RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-true}
       SEED_DEFAULT_ADMIN: ${SEED_DEFAULT_ADMIN:-true}
@@ -81,3 +83,4 @@ services:
 volumes:
   mysql_data:
   private_uploads:
+  huggingface_cache:

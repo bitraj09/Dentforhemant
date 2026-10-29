@@ -17,7 +17,7 @@ export async function GET() {
         });
 
         return NextResponse.json({
-            activeModel: config?.value || 'GOOGLE_AI',
+            activeModel: 'OWN_AI',
         });
     } catch (error) {
         console.error('[Set Model API] Failed to read active model', error);
@@ -28,7 +28,7 @@ export async function GET() {
 /**
  * POST /api/admin/set-model
  * Sets the active AI model. Admin only.
- * Body: { model: 'GOOGLE_AI' | 'MOCK_AI' | 'OWN_AI' }
+ * Body: { model: 'OWN_AI' }
  */
 export async function POST(req) {
     try {
@@ -47,7 +47,7 @@ export async function POST(req) {
         }
 
         const { model } = await req.json();
-        const validModels = ['GOOGLE_AI', 'MOCK_AI', 'OWN_AI'];
+        const validModels = ['OWN_AI'];
 
         if (!validModels.includes(model)) {
             return NextResponse.json({ error: 'Invalid model' }, { status: 400 });

@@ -20,12 +20,6 @@ enum UserStatus {
   REJECTED
 }
 
-enum AIModel {
-  GOOGLE_AI
-  MOCK_AI
-  OWN_AI
-}
-
 // ─── User ───
 model User {
   id              Int        @id @default(autoincrement())

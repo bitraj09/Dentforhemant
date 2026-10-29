@@ -8,7 +8,7 @@ export async function GET() {
             where: { key: 'activeModel' }
         });
 
-        return NextResponse.json({ activeModel: config?.value || 'GOOGLE_AI' });
+        return NextResponse.json({ activeModel: 'OWN_AI' });
     } catch (e) {
         return NextResponse.json({ error: 'Failed to fetch active model' }, { status: 500 });
     }

@@ -174,7 +174,7 @@ The application includes a verification pipeline to restrict sensitive diagnosti
 
 ## 🚀 Quick Start & Deployment
 
-For a production DigitalOcean deployment, use the hardened Compose overlay and deployment runbook in [docs/DEPLOYMENT_DIGITALOCEAN.md](docs/DEPLOYMENT_DIGITALOCEAN.md). The public production entry point is Nginx on ports 80/443; the app, database, and ML service must not be exposed directly.
+For AWS EC2, follow the [AWS deployment runbook](docs/DEPLOYMENT_AWS_EC2.md). For DigitalOcean, see the [DigitalOcean deployment guide](docs/DEPLOYMENT_DIGITALOCEAN.md). Both use the production Compose overlay and host Nginx; expose only ports 80/443 publicly, not the app, database, or ML service ports.
 
 ### Prerequisites
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
@@ -219,7 +219,7 @@ docker compose up --build -d
 
 To completely reset local data, run `docker compose down -v`. This deletes the MySQL database and uploaded files stored in Docker volumes.
 
-The built-in credentials and signing keys are for local development only. For a public or shared deployment, set strong values in a local `.env` file or your deployment secret manager and use the production overlay and runbook in [docs/DEPLOYMENT_DIGITALOCEAN.md](docs/DEPLOYMENT_DIGITALOCEAN.md). Do not use the development defaults in production.
+The built-in credentials and signing keys are for local development only. For a public or shared deployment, set strong values in a local `.env` file or your deployment secret manager and use the production overlay and relevant deployment runbook. Do not use the development defaults in production.
 
 ---
 

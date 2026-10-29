@@ -59,8 +59,8 @@ function pointsToPath(points) {
     return `M ${firstX * 100} ${firstY * 100} ${normalized.slice(1).map(([x, y]) => `L ${x * 100} ${y * 100}`).join(' ')}`;
 }
 
-// IoU-based local evaluation for Mock AI
-function evaluateWithMockAI(studentPoly, landmark) {
+// Deterministic polygon geometry feedback; this is scoring logic, not an AI model.
+function evaluateWithGeometry(studentPoly, landmark) {
     const typical = normalizePolygon(landmark.typicalPolygon);
     if (!typical || typical.length < 3 || studentPoly.length < 3) {
         return { isCorrect: false, accuracyScore: 0, feedback: 'Not enough points to evaluate.', overlapAssessment: 'missed', correctPolygon: typical || [] };
@@ -94,7 +94,7 @@ function evaluateWithMockAI(studentPoly, landmark) {
     else if (score >= 40) feedback = `Partial match. You're in the right region for the ${landmark.name}, but the coverage needs improvement. ${landmark.significance}`;
     else feedback = `The drawn area doesn't match the ${landmark.name} location. This landmark is typically found near ${Math.round(tCx*100)}% from left, ${Math.round(tCy*100)}% from top. ${landmark.description}`;
 
-    return { isCorrect, accuracyScore: score, feedback, overlapAssessment: assessment, correctPolygon: typical, positionFeedback: `Distance from center: ${(dist*100).toFixed(1)}%`, shapeFeedback: `Bounding box overlap: ${Math.round(overlap*100)}%`, source: 'mock' };
+    return { isCorrect, accuracyScore: score, feedback, overlapAssessment: assessment, correctPolygon: typical, positionFeedback: `Distance from center: ${(dist*100).toFixed(1)}%`, shapeFeedback: `Bounding box overlap: ${Math.round(overlap*100)}%`, source: 'geometry' };
 }
 
 function getBounds(poly) {
@@ -175,7 +175,7 @@ export default function LandmarkPracticePage() {
     const [result, setResult] = useState(null);
     const [score, setScore] = useState({ correct: 0, total: 0 });
     const [history, setHistory] = useState([]);
-    const [configuredModel, setConfiguredModel] = useState('GOOGLE_AI');
+    const [configuredModel, setConfiguredModel] = useState('OWN_AI');
     const [aiSource, setAiSource] = useState(null);
     const [gameStarted, setGameStarted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(60);
@@ -184,6 +184,7 @@ export default function LandmarkPracticePage() {
     const svgRef = useRef(null);
     const timerRef = useRef(null);
     const [showGuidance, setShowGuidance] = useState(false);
+    const [workflowError, setWorkflowError] = useState('');
 
     useEffect(() => {
         fetch('/api/config/model').then(r => r.json()).then(d => { if (d.activeModel) setConfiguredModel(d.activeModel); }).catch(() => {});
@@ -202,6 +203,7 @@ export default function LandmarkPracticePage() {
     }, []);
 
     const pickRandomLandmark = useCallback(async () => {
+        setWorkflowError('');
         const available = landmarks.filter(l => !usedIds.includes(l.id));
         const pool = available.length > 0 ? available : landmarks;
         if (available.length === 0) setUsedIds([]);
@@ -219,7 +221,9 @@ export default function LandmarkPracticePage() {
                     const detected = (data.landmarks || []).map((d) => {
                         const normalizeName = (s = '') => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
                         const detName = normalizeName(d.name || d.id || '');
-                        const matched = landmarks.find(l => normalizeName(l.name) === detName || normalizeName(l.id || '') === detName);
+                        const aliases = { lowerborder: 'inferior_border_mandible', gonialangle: 'angle_of_mandible', condylarhead: 'condyle', mentalridge: 'mental_foramen' };
+                        const mappedName = normalizeName(aliases[detName] || detName);
+                        const matched = landmarks.find(l => normalizeName(l.name) === mappedName || normalizeName(l.id || '') === mappedName);
 
                         const polyPixels = normalizePolygon(d.polygon);
                         const rawLooksLikePercent = polyPixels.length > 0 && polyPixels.every(([x, y]) => x <= 1 && y <= 1);
@@ -237,7 +241,7 @@ export default function LandmarkPracticePage() {
                         }
 
                         return { detection: d, landmark: lm };
-                    }).filter(Boolean);
+                    }).filter(({ landmark }) => landmark.typicalPolygon?.length >= 3);
 
                     if (detected.length > 0) {
                         // Shuffle detections and limit to max 10
@@ -257,9 +261,14 @@ export default function LandmarkPracticePage() {
                         if (timerRef.current) clearInterval(timerRef.current);
                         return first;
                     }
+                    setWorkflowError('The landmark model returned no detections for this image. Choose another OPG image and try again.');
+                    return null;
                 }
-            } catch (err) {
-                console.warn('Custom landmark detector unavailable:', err);
+                setWorkflowError(`Landmark model request failed (HTTP ${res.status}).`);
+                return null;
+            } catch {
+                setWorkflowError('Could not reach the landmark detection service.');
+                return null;
             }
         }
 
@@ -407,21 +416,7 @@ export default function LandmarkPracticePage() {
         let evalResult = null;
 
         try {
-            if (configuredModel === 'GOOGLE_AI') {
-                const res = await fetch('/api/gemini-landmark-evaluate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image, landmark: currentLandmark,
-                        studentPolygon: drawingPoints,
-                        imageWidth: imgSize.w, imageHeight: imgSize.h,
-                    }),
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (!data.error) { evalResult = { ...data, source: 'gemini' }; }
-                }
-            } else if (configuredModel === 'OWN_AI') {
+            if (configuredModel !== 'MOCK_AI') {
                 // Try the custom landmark detector, then use the local evaluator for polygon scoring.
                 try {
                     const res = await fetch('/api/ml-landmarks', {
@@ -494,29 +489,32 @@ export default function LandmarkPracticePage() {
                             }
                         }
 
-                        const mockResult = evaluateWithMockAI(drawingPoints, targetForEval);
+                        if (landmarkCount === 0 || !targetForEval?.typicalPolygon?.length) {
+                            throw new Error('The landmark model returned no usable polygon for this image.');
+                        }
+                        const mockResult = evaluateWithGeometry(drawingPoints, targetForEval);
                         evalResult = {
                             ...mockResult,
-                            source: 'custom',
-                            feedback: mockResult.feedback + (landmarkCount > 0
-                                ? ` (Custom model detected ${landmarkCount} landmark(s) to reinforce the anatomical context.)`
-                                : ' (Custom model did not return landmark detections for this image.)'),
+                            source: 'geometry',
+                            feedback: `${mockResult.feedback} This score compares your drawing with the local model's detected polygon using position and bounding-box overlap; it is geometric feedback, not an AI evaluation.`,
                         };
                     }
                 } catch (err) {
-                    console.warn('Custom model unavailable, using mock:', err);
+                    console.warn('Custom landmark evaluation failed:', err);
                 }
             }
         } catch (err) {
             console.error(`AI evaluation failed (${configuredModel}):`, err);
         }
 
-        // Fallback to Mock AI
         if (!evalResult) {
-            evalResult = evaluateWithMockAI(drawingPoints, currentLandmark);
+            setWorkflowError('The local model could not evaluate this drawing. No score was recorded.');
+            setLoading(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+            return;
         }
 
-        setAiSource(evalResult.source || 'mock');
+        setAiSource(evalResult.source);
         setResult(evalResult);
         setScore(prev => ({
             correct: prev.correct + (evalResult.isCorrect ? 1 : 0),
@@ -665,7 +663,7 @@ export default function LandmarkPracticePage() {
                 <motion.div className={styles.header} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
                     <h1 className="section-title">Landmark Drawing Practice</h1>
                     <p className="section-subtitle">
-                        Draw anatomical landmarks on OPG radiographs and get AI feedback on your accuracy.
+                        Draw anatomical landmarks on OPG radiographs and get feedback from the selected evaluator.
                     </p>
                 </motion.div>
 
@@ -679,10 +677,10 @@ export default function LandmarkPracticePage() {
                         <div className={styles.startIcon}><FiEdit3 size={36} /></div>
                         <h2 className={styles.startTitle}>Ready to Practice?</h2>
                         <p className={styles.startDesc}>
-                            You&apos;ll be given a landmark name. Click on the X-ray to draw its polygon outline. AI will evaluate your accuracy.
+                            You&apos;ll be given a landmark name. Draw its outline on the X-ray for an AI evaluation or a geometric comparison against local model detections, depending on the selected evaluator.
                         </p>
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-                            <button className="btn btn-primary" onClick={startPractice}><FiTarget size={18} /> Start Practice</button>
+                            <button className="btn btn-primary" onClick={startPractice} disabled={loading}><FiTarget size={18} /> Start Practice</button>
                             <button className="btn btn-ghost" onClick={() => setImage(null)}>Change Image</button>
                         </div>
                         <div className={styles.timeSelector}>
@@ -697,6 +695,7 @@ export default function LandmarkPracticePage() {
                     </motion.div>
                 ) : (
                     <div className={styles.workspace}>
+                        {workflowError && <p role="alert" className={styles.workflowError}>{workflowError}</p>}
                         {/* Left — Canvas */}
                         <div className={styles.canvasArea}>
                             {/* Challenge Card */}

@@ -33,7 +33,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-ENV RUN_DB_MIGRATIONS=true
+ENV RUN_DB_MIGRATIONS=false
 
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs nextjs && \
@@ -51,6 +51,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 COPY --from=builder /app/scripts/migrate-verification-uploads.mjs ./scripts/migrate-verification-uploads.js
 COPY --from=builder /app/scripts/seed-default-admin.js ./scripts/seed-default-admin.js
+COPY --from=builder /app/scripts/make-admin.js ./scripts/make-admin.js
 
 RUN sed -i 's/\r$//' ./scripts/docker-entrypoint.sh && \
     chmod +x ./scripts/docker-entrypoint.sh && \

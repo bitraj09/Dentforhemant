@@ -4,15 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiUsers, FiUserCheck, FiUserX, FiClock, FiSearch,
     FiChevronDown, FiChevronUp, FiEye, FiCheck, FiX,
-    FiCpu, FiZap, FiBox, FiShield, FiRefreshCw
+    FiBox, FiShield, FiRefreshCw
 } from 'react-icons/fi';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 
 const MODEL_OPTIONS = [
-    { id: 'GOOGLE_AI', label: 'Google AI (Gemini)', icon: <FiZap size={20} />, color: '#6366f1', desc: 'Real Google Gemini API — production quality' },
-    { id: 'MOCK_AI', label: 'Mock AI', icon: <FiCpu size={20} />, color: '#f59e0b', desc: 'Fake/demo responses for testing' },
     { id: 'OWN_AI', label: 'Own AI (Custom)', icon: <FiBox size={20} />, color: '#22c55e', desc: 'Custom trained dental model' },
 ];
 
@@ -31,13 +29,8 @@ export default function AdminPage() {
     const [showRejectModal, setShowRejectModal] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(null);
     const [deletePassword, setDeletePassword] = useState('');
-    const [activeModel, setActiveModel] = useState('GOOGLE_AI');
+    const [activeModel, setActiveModel] = useState('OWN_AI');
     const [modelLoading, setModelLoading] = useState(false);
-    const [geminiApiKey, setGeminiApiKey] = useState('');
-    const [geminiKeyConfigured, setGeminiKeyConfigured] = useState(false);
-    const [geminiKeySource, setGeminiKeySource] = useState('none');
-    const [geminiKeyLoading, setGeminiKeyLoading] = useState(false);
-    const [geminiKeyMessage, setGeminiKeyMessage] = useState('');
     const [refreshing, setRefreshing] = useState(false);
     const [zoomImage, setZoomImage] = useState(null);
 
@@ -51,7 +44,6 @@ export default function AdminPage() {
             }
             fetchUsers();
             fetchActiveModel();
-            fetchGeminiKeyStatus();
         }
     }, [status, session]);
 
@@ -75,65 +67,11 @@ export default function AdminPage() {
         try {
             const res = await fetch('/api/admin/set-model', { cache: 'no-store' });
             const data = await res.json();
-            if (data.activeModel) setActiveModel(data.activeModel);
+            if (data.activeModel) setActiveModel('OWN_AI');
         } catch (err) {
             console.error('Failed to fetch model:', err);
         }
     }
-
-    async function fetchGeminiKeyStatus() {
-        try {
-            const res = await fetch('/api/admin/llm-config', { cache: 'no-store' });
-            const data = await res.json();
-            if (res.ok) {
-                setGeminiKeyConfigured(Boolean(data.isConfigured));
-                setGeminiKeySource(data.source || 'none');
-            }
-        } catch (err) {
-            console.error('Failed to fetch Gemini key status:', err);
-        }
-    }
-
-    async function saveGeminiKey(event) {
-        event.preventDefault();
-        setGeminiKeyLoading(true);
-        setGeminiKeyMessage('');
-        try {
-            const res = await fetch('/api/admin/llm-config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: geminiApiKey }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Could not save the Gemini API key.');
-            setGeminiApiKey('');
-            setGeminiKeyConfigured(true);
-            setGeminiKeySource('admin');
-            setGeminiKeyMessage('Gemini API key saved securely.');
-        } catch (err) {
-            setGeminiKeyMessage(err.message || 'Could not save the Gemini API key.');
-        } finally {
-            setGeminiKeyLoading(false);
-        }
-    }
-
-    async function removeGeminiKey() {
-        setGeminiKeyLoading(true);
-        setGeminiKeyMessage('');
-        try {
-            const res = await fetch('/api/admin/llm-config', { method: 'DELETE' });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Could not remove the saved Gemini API key.');
-            setGeminiKeyConfigured(Boolean(data.isConfigured));
-            setGeminiKeySource(data.source || 'none');
-            setGeminiKeyMessage(data.isConfigured ? 'Saved key removed. The environment key is still active.' : 'Gemini API key removed.');
-        } catch (err) {
-            setGeminiKeyMessage(err.message || 'Could not remove the saved Gemini API key.');
-        } finally {
-            setGeminiKeyLoading(false);
-        }
-    }
-
     const handleAction = async (userId, action, reason) => {
         setActionLoading(userId);
         try {
@@ -297,7 +235,7 @@ export default function AdminPage() {
                     transition={{ delay: 0.2 }}
                 >
                     <h2 className={styles.sectionTitle}>
-                        <FiCpu size={20} /> AI Model Control
+                        <FiBox size={20} /> AI Model Control
                     </h2>
                     <div className={styles.modelGrid}>
                         {MODEL_OPTIONS.map((model) => (
@@ -334,51 +272,6 @@ export default function AdminPage() {
                         ))}
                     </div>
                 </motion.div>
-
-                <motion.section
-                    className={styles.llmKeySection}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    aria-labelledby="gemini-key-title"
-                >
-                    <div className={styles.llmKeyHeading}>
-                        <div>
-                            <h2 className={styles.sectionTitle} id="gemini-key-title"><FiZap size={20} /> LLM API Configuration</h2>
-                            <p>Configure the Gemini API key used by the AI Assistant and Gemini analysis features.</p>
-                        </div>
-                        <span className={`${styles.keyStatus} ${geminiKeyConfigured ? styles.keyConfigured : ''}`}>
-                            {geminiKeyConfigured ? `Configured via ${geminiKeySource === 'admin' ? 'admin' : 'environment'}` : 'Not configured'}
-                        </span>
-                    </div>
-                    <form className={styles.llmKeyForm} onSubmit={saveGeminiKey}>
-                        <label htmlFor="gemini-api-key">Gemini API key</label>
-                        <input
-                            id="gemini-api-key"
-                            type="password"
-                            autoComplete="new-password"
-                            value={geminiApiKey}
-                            onChange={(event) => setGeminiApiKey(event.target.value)}
-                            placeholder={geminiKeyConfigured ? 'Enter a new key to replace the saved key' : 'Paste Gemini API key'}
-                            minLength={20}
-                            maxLength={500}
-                            required
-                        />
-                        <div className={styles.llmKeyActions}>
-                            <button type="submit" className="btn btn-primary" disabled={geminiKeyLoading || !geminiApiKey.trim()}>
-                                {geminiKeyLoading ? 'Saving…' : 'Save API key'}
-                            </button>
-                            {geminiKeySource === 'admin' && (
-                                <button type="button" className="btn btn-outline" onClick={removeGeminiKey} disabled={geminiKeyLoading}>
-                                    Remove saved key
-                                </button>
-                            )}
-                        </div>
-                        <p className={styles.llmKeyHint}>The key is encrypted before storage and never shown after saving. It is only sent to Google from the server.</p>
-                        {geminiKeyMessage && <p className={styles.llmKeyMessage} role="status">{geminiKeyMessage}</p>}
-                    </form>
-                </motion.section>
-
                 {/* Users List */}
                 <motion.div
                     className={styles.usersSection}
