@@ -11,6 +11,8 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-dental}
       MYSQL_USER: ${MYSQL_USER:-dental}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dental-local-password}
+    ports:
+      - "127.0.0.1:3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -28,7 +30,9 @@ services:
     environment:
       ML_API_KEY: ${ML_API_KEY:-dental-local-ml-key}
       CORS_ORIGINS: ${ALLOWED_ORIGINS:-}
-    # Only expose internally within Docker network — not to host
+    # The loopback mapping also lets a host-run `npm run dev` reach the model service.
+    ports:
+      - "127.0.0.1:8001:8001"
     expose:
       - "8001"
     healthcheck:

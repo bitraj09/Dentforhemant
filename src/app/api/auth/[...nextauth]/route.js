@@ -55,26 +55,35 @@ export const authOptions = {
             // First login — set initial values
             if (user) {
                 token.id = user.id;
+                token.email = user.email;
                 token.collegeName = user.collegeName;
                 token.role = user.role;
                 token.status = user.status;
+                token.sessionInvalid = false;
+                token.authUnavailable = false;
             }
 
-            // On EVERY token refresh — re-fetch role/status from DB
-            // so admin changes reflect immediately without re-login
-            if (token.id) {
+            // Refresh authorization only when the persisted identity still matches.
+            // Numeric IDs can collide when DATABASE_URL changes between databases.
+            if (token.id && !token.sessionInvalid) {
                 try {
                     const freshUser = await prisma.user.findUnique({
                         where: { id: parseInt(token.id) },
-                        select: { role: true, status: true, name: true },
+                        select: { email: true, role: true, status: true, name: true },
                     });
-                    if (freshUser) {
+
+                    if (!freshUser || !token.email || freshUser.email.toLowerCase() !== String(token.email).toLowerCase()) {
+                        token.sessionInvalid = true;
+                        token.authUnavailable = false;
+                    } else {
+                        token.authUnavailable = false;
                         token.role = freshUser.role;
                         token.status = freshUser.status;
                         token.name = freshUser.name;
                     }
                 } catch (e) {
-                    // If DB is unreachable, keep existing token values
+                    // Fail closed while the account database cannot be verified.
+                    token.authUnavailable = true;
                     console.error('[JWT Refresh] Database refresh failed.', { name: e?.name, code: e?.code });
                 }
             }
@@ -82,6 +91,7 @@ export const authOptions = {
             return token;
         },
         async session({ session, token }) {
+            if (token.sessionInvalid || token.authUnavailable) return null;
             if (session.user) {
                 session.user.id = token.id;
                 session.user.collegeName = token.collegeName;

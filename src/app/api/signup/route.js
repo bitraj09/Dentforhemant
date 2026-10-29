@@ -90,7 +90,7 @@ export async function POST(req) {
             const extension = idCard.type === 'image/jpeg' ? 'jpg' : idCard.type === 'image/png' ? 'png' : 'webp';
             storedPath = join(uploadDir, `${storageId}.${extension}`);
             await writeFile(storedPath, buffer, { flag: 'wx', mode: 0o600 });
-            idCardPath = `private:${storageId}.${signature.ext}`;
+            idCardPath = `private:${storageId}.${extension}`;
         }
 
         let user;

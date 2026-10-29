@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  allowedDevOrigins: ["*.ngrok-free.app"],
   async headers() {
     return [{
       source: "/:path*",

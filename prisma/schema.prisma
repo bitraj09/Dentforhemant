@@ -64,3 +64,22 @@ model SystemConfig {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+// Anonymous browser IDs are hashed before storage and are not linked to user accounts.
+model SiteVisitor {
+  visitorHash String                  @id @db.Char(64)
+  firstSeenAt DateTime                @default(now()) @db.DateTime(3)
+  lastSeenAt  DateTime                @updatedAt @db.DateTime(3)
+  dailyVisits SiteVisitorDailyVisit[]
+}
+
+model SiteVisitorDailyVisit {
+  id          Int         @id @default(autoincrement())
+  visitorHash String      @db.Char(64)
+  visitDay    String      @db.Char(10)
+  createdAt   DateTime    @default(now()) @db.DateTime(3)
+  visitor     SiteVisitor @relation(fields: [visitorHash], references: [visitorHash], onDelete: Cascade)
+
+  @@unique([visitorHash, visitDay])
+  @@index([visitDay])
+}

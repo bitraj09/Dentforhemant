@@ -116,6 +116,7 @@ export default function AppShell({ children }) {
         </header>
 
         <main className={styles.authMain}>{children}</main>
+        <StatusBar standalone />
       </div>
     );
   }
@@ -223,6 +224,7 @@ export default function AppShell({ children }) {
             </div>
           </div>
         </footer>
+        <StatusBar standalone />
       </div>
     );
   }

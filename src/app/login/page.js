@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiAlertCircle, FiCheckCircle, FiEye, FiEyeOff } from 'react-icons/fi';
@@ -9,7 +9,6 @@ import { TbDental } from 'react-icons/tb';
 import styles from './page.module.css';
 
 function LoginForm() {
-    const router = useRouter();
     const { status } = useSession();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
@@ -19,9 +18,9 @@ function LoginForm() {
 
     useEffect(() => {
         if (status === 'authenticated') {
-            router.replace('/studio');
+            window.location.replace('/studio');
         }
-    }, [status, router]);
+    }, [status]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -31,17 +30,23 @@ function LoginForm() {
         const email = e.target.email.value;
         const password = e.target.password.value;
 
-        const result = await signIn('credentials', {
-            email,
-            password,
-            redirect: false,
-        });
+        try {
+            const result = await signIn('credentials', {
+                email,
+                password,
+                redirect: false,
+            });
 
-        if (result.error) {
-            setError('Invalid email or password');
+            if (result?.error || !result?.ok) {
+                setError('Invalid email or password');
+                setLoading(false);
+                return;
+            }
+
+            window.location.replace('/studio');
+        } catch {
+            setError('Unable to sign in right now. Check your connection and try again.');
             setLoading(false);
-        } else {
-            router.push('/studio');
         }
     };
 

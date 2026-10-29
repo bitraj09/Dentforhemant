@@ -11,7 +11,7 @@
   z-index: var(--z-sticky);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   padding: 0 var(--space-4);
   background: var(--surface);
   border-top: 1px solid var(--border);
@@ -24,6 +24,13 @@
 
 .sidebarCollapsed {
   left: var(--sidebar-collapsed);
+}
+
+.standalone {
+  left: 0;
+  justify-content: flex-end;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .left,
@@ -57,6 +64,7 @@
 .center {
   color: var(--text-muted);
   gap: 6px;
+  margin: 0 auto;
 }
 
 .warningIcon {
@@ -69,6 +77,91 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 600px;
+}
+
+.analytics {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.analyticsButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 4px 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.analyticsButton:hover,
+.analyticsButton:focus-visible {
+  color: var(--primary);
+  background: var(--surface-2);
+  outline: none;
+}
+
+.analyticsPopover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: calc(var(--z-sticky) + 1);
+  width: min(300px, calc(100vw - 24px));
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+  font-size: 12px;
+}
+
+.analyticsPopover > strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.analyticsStat {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 0;
+  color: var(--text-muted);
+}
+
+.analyticsStat b {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.publicToggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 9px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.publicToggle input {
+  margin: 1px 0 0;
+  accent-color: var(--primary);
+}
+
+.analyticsPopover small {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .kbdHint {
@@ -103,5 +196,10 @@
   .kbdHint,
   .divider {
     display: none;
+  }
+
+  .center {
+    margin-left: 0;
+    margin-right: 8px;
   }
 }

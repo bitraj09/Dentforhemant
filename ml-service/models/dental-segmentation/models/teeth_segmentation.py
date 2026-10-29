@@ -214,9 +214,10 @@ def build_model(num_classes):
     Build Mask R-CNN with ResNet50+FPN backbone.
     Loads COCO pretrained weights and replaces heads for num_classes.
     """
-    # Load pretrained model
+    # Build without network weights; the complete trained checkpoint is loaded by the caller.
     model = maskrcnn_resnet50_fpn(
-        weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT,
+        weights=None,
+        weights_backbone=None,
         box_nms_thresh = NMS_THRESHOLD,
         box_score_thresh = CONF_THRESHOLD,
         box_detections_per_img = MAX_DETECTIONS,

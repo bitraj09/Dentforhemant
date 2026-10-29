@@ -12,7 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir --default-timeout=1000 -r requirements.txt
+# Use CPU-only PyTorch wheels; the Compose service has no GPU allocation.
+RUN python -m pip install --no-cache-dir \
+      --index-url https://download.pytorch.org/whl/cpu \
+      --extra-index-url https://pypi.org/simple \
+      torch==2.13.0 torchvision==0.28.0 \
+    && grep -v -E '^(torch|torchvision)$' requirements.txt > /tmp/requirements.txt \
+    && python -m pip install --no-cache-dir --default-timeout=1000 -r /tmp/requirements.txt
 
 COPY . ./
 
